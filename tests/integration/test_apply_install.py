@@ -116,6 +116,15 @@ class ApplyInstallTests(unittest.TestCase):
             self.assertTrue(
                 any(command[:2] == ("docker", "compose") for command in runner.commands)
             )
+            compose_up = [
+                command
+                for command in runner.commands
+                if command[:2] == ("docker", "compose") and "up" in command
+            ]
+            self.assertEqual(len(compose_up), 2)
+            self.assertEqual(compose_up[0][-2:], ("redis", "omniroute"))
+            self.assertNotIn("preclassifier", compose_up[0])
+            self.assertIn("--profile", compose_up[1])
             self.assertTrue(
                 any("--profile" in command and "mem0" in command for command in runner.commands)
             )
