@@ -136,9 +136,7 @@ class Installer:
         routing_path = layout.services_dir / "routing-policy.json"
         routing_path.write_text(routing_policy, encoding="utf-8")
         if answers.enable_mem0:
-            download_and_install_mem0_server(
-                layout.services_dir / "mem0" / "source" / "server"
-            )
+            download_and_install_mem0_server(layout.services_dir / "mem0" / "source" / "server")
 
         router_key = self.token_factory()
         internal_key = self.token_factory()
@@ -158,7 +156,7 @@ class Installer:
         generated.update(supplied_credentials)
         SecretStore(layout.secrets_file).set_many(generated)
 
-        compose_command = [
+        compose_base = [
             "docker",
             "compose",
             "--env-file",
@@ -166,23 +164,18 @@ class Installer:
             "-f",
             str(layout.services_dir / "compose.yaml"),
         ]
-        if answers.enable_mem0:
-            compose_command.extend(("--profile", "mem0"))
-        compose_command.extend(("up", "-d", "--build", "--wait", "--wait-timeout", "180"))
-        self._run_checked(compose_command)
-
-        env_path_result = self._run_checked(("hermes", "config", "env-path"))
-        hermes_env_path = Path(env_path_result.stdout.strip()).expanduser()
-        if not str(hermes_env_path):
-            raise RuntimeError("Hermes did not report its secret environment path")
-        SecretStore(hermes_env_path).set("HERMES_LOCAL_ROUTER_KEY", router_key)
-        policy = load_golden_policy(self.resource_root / "policies" / "golden-policy.json")
-        for action in build_hermes_actions(policy):
-            self._run_checked(action)
-        if self.install_optional_components:
-            hermes_home = hermes_env_path.parent
-            download_and_install_superpowers(hermes_home)
-            self._run_checked(("hermes", "plugins", "enable", "superpowers"))
+        core_command = [
+            *compose_base,
+            "up",
+            "-d",
+            "--build",
+            "--wait",
+            "--wait-timeout",
+            "180",
+            "redis",
+            "omniroute",
+        ]
+        self._run_checked(core_command)
 
         management_token = generated["OMNIROUTE_MGMT_API_KEY"]
         client = self.omniroute_client or OmniRouteClient(
@@ -202,6 +195,25 @@ class Installer:
         for combo in json.loads(routing_policy)["combos"]:
             ensure_combo = getattr(client, "ensure_combo", client.apply_combo)
             ensure_combo(combo)
+
+        full_command = list(compose_base)
+        if answers.enable_mem0:
+            full_command.extend(("--profile", "mem0"))
+        full_command.extend(("up", "-d", "--build", "--wait", "--wait-timeout", "180"))
+        self._run_checked(full_command)
+
+        env_path_result = self._run_checked(("hermes", "config", "env-path"))
+        hermes_env_path = Path(env_path_result.stdout.strip()).expanduser()
+        if not str(hermes_env_path):
+            raise RuntimeError("Hermes did not report its secret environment path")
+        SecretStore(hermes_env_path).set("HERMES_LOCAL_ROUTER_KEY", router_key)
+        policy = load_golden_policy(self.resource_root / "policies" / "golden-policy.json")
+        for action in build_hermes_actions(policy):
+            self._run_checked(action)
+        if self.install_optional_components:
+            hermes_home = hermes_env_path.parent
+            download_and_install_superpowers(hermes_home)
+            self._run_checked(("hermes", "plugins", "enable", "superpowers"))
 
         self._run_checked(
             (
