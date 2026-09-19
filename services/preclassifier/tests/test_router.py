@@ -11,8 +11,9 @@ import queue
 import httpx
 from pathlib import Path
 
-os.environ.setdefault("OMNIROUTE_API_KEY", "test-only")
-os.environ.setdefault("CLIENT_API_KEYS", "mac-test-token,windows-test-token")
+# Tests must never inherit credentials from the host running the suite.
+os.environ["OMNIROUTE_API_KEY"] = "test-only"
+os.environ["CLIENT_API_KEYS"] = "mac-test-token,windows-test-token"
 
 import app
 from benchmark_cases import CASES
@@ -63,9 +64,11 @@ class ClassificationDeadlineTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.stdout.strip(), "False")
 
     async def test_total_deadline_includes_waiting_for_classifier_slot(self):
+        old_enabled = app.LOCAL_CLASSIFIER_ENABLED
         old_semaphore = app.classifier_semaphore
         old_cache = app.classification_cache
         old_timeout = getattr(app, "CLASSIFY_TOTAL_TIMEOUT_S", None)
+        app.LOCAL_CLASSIFIER_ENABLED = True
         app.classifier_semaphore = asyncio.Semaphore(0)
         app.classification_cache = app.ClassificationCache(8, 300)
         app.CLASSIFY_TOTAL_TIMEOUT_S = 0.02
@@ -78,6 +81,7 @@ class ClassificationDeadlineTests(unittest.IsolatedAsyncioTestCase):
                 timeout=0.2,
             )
         finally:
+            app.LOCAL_CLASSIFIER_ENABLED = old_enabled
             app.classifier_semaphore = old_semaphore
             app.classification_cache = old_cache
             if old_timeout is None:
@@ -130,9 +134,11 @@ class ClassificationDeadlineTests(unittest.IsolatedAsyncioTestCase):
                 self.active -= 1
                 return Response()
 
+        old_enabled = app.LOCAL_CLASSIFIER_ENABLED
         old_client = app.client
         old_cache = app.classification_cache
         tracking_client = TrackingClient()
+        app.LOCAL_CLASSIFIER_ENABLED = True
         app.client = tracking_client
         app.classification_cache = app.ClassificationCache(8, 300)
         try:
@@ -144,6 +150,7 @@ class ClassificationDeadlineTests(unittest.IsolatedAsyncioTestCase):
                 for index in range(3)
             ))
         finally:
+            app.LOCAL_CLASSIFIER_ENABLED = old_enabled
             app.client = old_client
             app.classification_cache = old_cache
 
@@ -465,6 +472,9 @@ class PoolSafetyTests(unittest.TestCase):
         )
 
     def test_tool_history_rejects_pool_containing_tool_free_member(self):
+        tool_free_model = "test/tool-free-model"
+        old_tool_free = app.TOOL_FREE_ONLY_MODELS
+        app.TOOL_FREE_ONLY_MODELS = {tool_free_model}
         with tempfile.NamedTemporaryFile(suffix=".sqlite") as db_file:
             db = sqlite3.connect(db_file.name)
             db.execute("CREATE TABLE combos (name TEXT NOT NULL, data TEXT NOT NULL)")
@@ -475,7 +485,7 @@ class PoolSafetyTests(unittest.TestCase):
                     json.dumps({
                         "models": [
                             {"model": "safe/tool-model"},
-                            {"model": "cloudflare-ai/@cf/openai/gpt-oss-20b"},
+                            {"model": tool_free_model},
                         ]
                     }),
                 ),
@@ -485,15 +495,19 @@ class PoolSafetyTests(unittest.TestCase):
 
             members = app._combo_members("mixed-pool", db_file.name)
             skips = {}
-            fitting = app._filter_by_policy(
-                ["mixed-pool"], "conversation", "simple", 10, True, skips,
-                combo_members=lambda _: members,
-            )
+            try:
+                fitting = app._filter_by_policy(
+                    ["mixed-pool"], "conversation", "simple", 10, True, skips,
+                    combo_members=lambda _: members,
+                )
+            finally:
+                app.TOOL_FREE_ONLY_MODELS = old_tool_free
 
         self.assertEqual(fitting, [])
         self.assertIn("tool-free-only member", skips["mixed-pool"])
 
     def test_fresh_tool_schema_rejects_pool_containing_tool_free_member(self):
+        tool_free_model = "test/tool-free-model"
         body = {
             "messages": [{"role": "user", "content": "What time is it?"}],
             "tools": [{
@@ -503,14 +517,16 @@ class PoolSafetyTests(unittest.TestCase):
         }
         skips = {}
 
-        fitting = app._filter_by_policy(
-            ["mixed-pool"], "conversation", "simple", 10,
-            app._has_tool_context(body, body["messages"]), skips,
-            combo_members=lambda _: {
-                "safe/tool-model",
-                "cloudflare-ai/@cf/openai/gpt-oss-20b",
-            },
-        )
+        old_tool_free = app.TOOL_FREE_ONLY_MODELS
+        app.TOOL_FREE_ONLY_MODELS = {tool_free_model}
+        try:
+            fitting = app._filter_by_policy(
+                ["mixed-pool"], "conversation", "simple", 10,
+                app._has_tool_context(body, body["messages"]), skips,
+                combo_members=lambda _: {"safe/tool-model", tool_free_model},
+            )
+        finally:
+            app.TOOL_FREE_ONLY_MODELS = old_tool_free
 
         self.assertEqual(fitting, [])
         self.assertIn("tool-free-only member", skips["mixed-pool"])
@@ -563,13 +579,18 @@ class ContextBudgetTests(unittest.TestCase):
             },
         )
 
-        for body in bodies:
-            with self.subTest(body_fields=tuple(body)):
-                task_type, complexity, note = app._guard_request_size(
-                    "conversation", "simple", app._estimate_request_tokens(body)
-                )
-                self.assertEqual((task_type, complexity), ("conversation", "complex"))
-                self.assertIn("complete_request_forced_complex", note)
+        old_limits = app.MODEL_POLICY_PROMPT_LIMITS
+        app.MODEL_POLICY_PROMPT_LIMITS = {"pool-chat": 8_000}
+        try:
+            for body in bodies:
+                with self.subTest(body_fields=tuple(body)):
+                    task_type, complexity, note = app._guard_request_size(
+                        "conversation", "simple", app._estimate_request_tokens(body)
+                    )
+                    self.assertEqual((task_type, complexity), ("conversation", "complex"))
+                    self.assertIn("complete_request_forced_complex", note)
+        finally:
+            app.MODEL_POLICY_PROMPT_LIMITS = old_limits
 
 
 class RequestValidationTests(unittest.TestCase):
@@ -651,7 +672,12 @@ class ReadinessTests(unittest.IsolatedAsyncioTestCase):
                     raise OSError("connection refused")
                 return Response(200)
 
-        report = await app._readiness_report(Client(), "/tmp/no-such-omniroute.sqlite")
+        old_enabled = app.LOCAL_CLASSIFIER_ENABLED
+        app.LOCAL_CLASSIFIER_ENABLED = True
+        try:
+            report = await app._readiness_report(Client(), "/tmp/no-such-omniroute.sqlite")
+        finally:
+            app.LOCAL_CLASSIFIER_ENABLED = old_enabled
 
         self.assertEqual(report["status"], "not_ready")
         self.assertFalse(report["checks"]["ollama"]["ok"])
