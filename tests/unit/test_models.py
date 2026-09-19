@@ -42,6 +42,21 @@ class ModelContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "local-only"):
             InstallAnswers(mode=InstallMode.LOCAL, providers=(provider,))
 
+    def test_local_mode_rejects_alpha_mem0_cloud_dependency(self) -> None:
+        provider = ProviderConfig(
+            provider_id="ollama",
+            kind=ProviderKind.OLLAMA,
+            base_url="http://127.0.0.1:11434/v1",
+            credential_env=None,
+            privacy="local",
+        )
+        with self.assertRaisesRegex(ValueError, "Mem0"):
+            InstallAnswers(
+                mode=InstallMode.LOCAL,
+                providers=(provider,),
+                enable_mem0=True,
+            )
+
     def test_model_candidate_is_immutable(self) -> None:
         candidate = ModelCandidate(
             provider_id="ollama",
@@ -56,4 +71,3 @@ class ModelContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
