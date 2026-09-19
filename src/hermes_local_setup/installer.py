@@ -54,7 +54,7 @@ class Installer:
         resource_root: Path | None = None,
         token_factory: Callable[[], str] | None = None,
         omniroute_client: Any | None = None,
-        install_optional_components: bool = False,
+        install_optional_components: bool = True,
     ) -> None:
         self.dry_run = dry_run
         self.runner = runner or CommandRunner(dry_run=dry_run, timeout=360.0)
