@@ -95,7 +95,9 @@ class ApplyInstallTests(unittest.TestCase):
             with patch(
                 "hermes_local_setup.installer.download_and_install_mem0_server",
                 side_effect=install_mem0,
-            ) as mem0_installer:
+            ) as mem0_installer, patch(
+                "hermes_local_setup.installer.download_and_install_superpowers"
+            ) as superpowers_installer:
                 report = installer.install(
                     answers=answers,
                     binding=bind_capabilities((model,)),
@@ -108,6 +110,7 @@ class ApplyInstallTests(unittest.TestCase):
             self.assertTrue((layout.services_dir / "routing-policy.json").is_file())
             self.assertTrue((mem0_destination / "Dockerfile").is_file())
             mem0_installer.assert_called_once_with(mem0_destination)
+            superpowers_installer.assert_called_once_with((root / ".hermes" / ".env").parent)
             secret_text = layout.secrets_file.read_text(encoding="utf-8")
             self.assertIn("EXAMPLE_API_KEY=synthetic-provider-key", secret_text)
             self.assertIn("HERMES_LOCAL_ROUTER_KEY=generated-safe-token-123456", secret_text)
@@ -127,6 +130,10 @@ class ApplyInstallTests(unittest.TestCase):
             self.assertIn("--profile", compose_up[1])
             self.assertTrue(
                 any("--profile" in command and "mem0" in command for command in runner.commands)
+            )
+            self.assertIn(
+                ("hermes", "plugins", "enable", "superpowers"),
+                runner.commands,
             )
             expected_prefix = ("hermes", "config", "set")
             hermes_config_commands = [
