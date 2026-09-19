@@ -2,28 +2,28 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from ipaddress import ip_address
 from types import MappingProxyType
-from typing import Mapping
 from urllib.parse import urlparse
 
 
-class InstallMode(str, Enum):
+class InstallMode(StrEnum):
     LOCAL = "local"
     CLOUD = "cloud"
     HYBRID = "hybrid"
 
 
-class ProviderKind(str, Enum):
+class ProviderKind(StrEnum):
     OPENAI_COMPATIBLE = "openai-compatible"
     OLLAMA = "ollama"
     LM_STUDIO = "lm-studio"
     OAUTH = "oauth"
 
 
-class Capability(str, Enum):
+class Capability(StrEnum):
     FAST = "fast"
     CODING = "coding"
     AGENTIC = "agentic"
@@ -104,4 +104,8 @@ class InstallAnswers:
             provider.privacy != "local" for provider in self.providers
         ):
             raise ValueError("local-only mode cannot include a cloud provider")
-
+        if self.mode is InstallMode.LOCAL and self.enable_mem0:
+            raise ValueError(
+                "Self-hosted Mem0 in this private alpha requires a cloud embedding provider; "
+                "use built-in Hermes memory for fully local mode"
+            )
