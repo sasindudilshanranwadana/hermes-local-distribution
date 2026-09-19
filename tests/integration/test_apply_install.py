@@ -92,12 +92,15 @@ class ApplyInstallTests(unittest.TestCase):
                 destination.mkdir(parents=True)
                 (destination / "Dockerfile").write_text("FROM scratch\n", encoding="utf-8")
 
-            with patch(
-                "hermes_local_setup.installer.download_and_install_mem0_server",
-                side_effect=install_mem0,
-            ) as mem0_installer, patch(
-                "hermes_local_setup.installer.download_and_install_superpowers"
-            ) as superpowers_installer:
+            with (
+                patch(
+                    "hermes_local_setup.installer.download_and_install_mem0_server",
+                    side_effect=install_mem0,
+                ) as mem0_installer,
+                patch(
+                    "hermes_local_setup.installer.download_and_install_superpowers"
+                ) as superpowers_installer,
+            ):
                 report = installer.install(
                     answers=answers,
                     binding=bind_capabilities((model,)),

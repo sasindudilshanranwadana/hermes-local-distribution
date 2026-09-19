@@ -9,9 +9,7 @@ TEXT_SUFFIXES = {".py", ".toml", ".json", ".yaml", ".yml", ".md", ".sh", ".ps1"}
 
 class RepositoryHygieneTests(unittest.TestCase):
     def test_provider_manifest_includes_generic_openai_compatible_option(self) -> None:
-        payload = tomllib.loads(
-            (ROOT / "manifests" / "providers.toml").read_text(encoding="utf-8")
-        )
+        payload = tomllib.loads((ROOT / "manifests" / "providers.toml").read_text(encoding="utf-8"))
         providers = {entry["id"]: entry for entry in payload["provider"]}
         self.assertEqual(providers["custom"]["kind"], "openai-compatible")
         self.assertEqual(providers["custom"]["credential_env"], "CUSTOM_PROVIDER_API_KEY")
