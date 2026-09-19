@@ -48,7 +48,43 @@ class ProviderClientTests(unittest.TestCase):
         with self.assertRaisesRegex(ProviderError, "catalog"):
             ProviderClient(transport=transport).discover(self.provider, "key")
 
+    def test_uses_provider_specific_auth_headers(self) -> None:
+        cases = (
+            ("anthropic", "x-api-key", "anthropic-version"),
+            ("gemini", "x-goog-api-key", None),
+        )
+        for provider_id, expected_key_header, expected_version_header in cases:
+            with self.subTest(provider_id=provider_id):
+                seen_headers: dict[str, str] = {}
+
+                def transport(
+                    url: str, headers: dict[str, str], timeout: float
+                ) -> tuple[int, bytes]:
+                    seen_headers.update(headers)
+                    return 200, b'{"data":[{"id":"model-a"}]}'
+
+                provider = ProviderConfig(
+                    provider_id=provider_id,
+                    kind=ProviderKind.OPENAI_COMPATIBLE,
+                    base_url="https://models.example/v1",
+                    credential_env="PROVIDER_API_KEY",
+                    privacy="cloud",
+                )
+                ProviderClient(transport=transport).discover(provider, "synthetic-key")
+                self.assertEqual(seen_headers[expected_key_header], "synthetic-key")
+                self.assertNotIn("Authorization", seen_headers)
+                if expected_version_header:
+                    self.assertIn(expected_version_header, seen_headers)
+
+    def test_validates_the_selected_model_against_discovery(self) -> None:
+        def transport(url: str, headers: dict[str, str], timeout: float) -> tuple[int, bytes]:
+            return 200, b'{"data":[{"id":"available-model"}]}'
+
+        client = ProviderClient(transport=transport)
+        client.validate_model(self.provider, "key", "available-model")
+        with self.assertRaisesRegex(ProviderError, "not available"):
+            client.validate_model(self.provider, "key", "missing-model")
+
 
 if __name__ == "__main__":
     unittest.main()
-
