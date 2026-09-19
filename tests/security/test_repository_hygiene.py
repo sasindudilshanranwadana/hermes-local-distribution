@@ -2,12 +2,23 @@ import re
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 TEXT_SUFFIXES = {".py", ".toml", ".json", ".yaml", ".yml", ".md", ".sh", ".ps1"}
 
 
 class RepositoryHygieneTests(unittest.TestCase):
+    def test_preclassifier_has_container_test_stage_and_ci_gate(self) -> None:
+        dockerfile = (ROOT / "services" / "preclassifier" / "Dockerfile").read_text(
+            encoding="utf-8"
+        )
+        workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertRegex(dockerfile, r"(?m)^FROM base AS test$")
+        self.assertIn("pytest", dockerfile)
+        self.assertIn("--target test", workflow)
+
     def test_tracked_source_has_no_personal_vps_markers(self) -> None:
         violations: list[str] = []
         for path in ROOT.rglob("*"):
@@ -28,7 +39,8 @@ class RepositoryHygieneTests(unittest.TestCase):
         violations: list[str] = []
         for path in (ROOT / "services", ROOT / "policies", ROOT / "manifests"):
             for candidate in path.rglob("*"):
-                if candidate.is_file() and candidate.suffix in {".env", ".json", ".toml", ".yaml", ".yml"}:
+                config_suffixes = {".env", ".json", ".toml", ".yaml", ".yml"}
+                if candidate.is_file() and candidate.suffix in config_suffixes:
                     text = candidate.read_text(encoding="utf-8", errors="ignore")
                     if pattern.search(text):
                         violations.append(str(candidate.relative_to(ROOT)))
