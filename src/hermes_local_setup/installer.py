@@ -4,16 +4,17 @@ from __future__ import annotations
 
 import hashlib
 import json
+import platform
 import secrets
 import shutil
-import platform
 import tomllib
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Mapping
+from typing import Any
 
-from .commands import CommandRunner
-from .components import download_and_install_superpowers
+from .commands import CommandResult, CommandRunner
+from .components import download_and_install_mem0_server, download_and_install_superpowers
 from .hermes_config import build_hermes_actions, load_golden_policy
 from .models import CapabilityBinding, InstallAnswers
 from .omniroute import OmniRouteClient
@@ -22,7 +23,6 @@ from .render import render_routing_policy
 from .resources import resource_root as default_resource_root
 from .secrets import SecretStore
 from .state import InstallState, StateStore
-
 
 _PHASES = ("preflight", "render", "services", "hermes", "verify")
 
@@ -135,6 +135,10 @@ class Installer:
         )
         routing_path = layout.services_dir / "routing-policy.json"
         routing_path.write_text(routing_policy, encoding="utf-8")
+        if answers.enable_mem0:
+            download_and_install_mem0_server(
+                layout.services_dir / "mem0" / "source" / "server"
+            )
 
         router_key = self.token_factory()
         internal_key = self.token_factory()
@@ -227,6 +231,7 @@ class Installer:
         if shutil.which("hermes") is not None:
             return
         revision = "4716ec0ba4e212105f8f162c226f052b25f8a76b"
+        command: tuple[str, ...]
         if platform.system() == "Windows":
             script = self.resource_root / "vendor" / "hermes" / "install.ps1"
             command = (
@@ -274,7 +279,7 @@ class Installer:
             raise RuntimeError("The bundled Hermes installer failed checksum verification")
         self._run_checked(command)
 
-    def _run_checked(self, argv: Any):
+    def _run_checked(self, argv: Any) -> CommandResult:
         result = self.runner.run(argv)
         if result.returncode != 0:
             detail = result.stderr.strip() or result.stdout.strip() or "unknown error"

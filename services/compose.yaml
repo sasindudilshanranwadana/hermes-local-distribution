@@ -113,6 +113,9 @@ services:
     restart: unless-stopped
     env_file: ["${HERMES_LOCAL_SECRETS_FILE:?Run the setup wizard first}"]
     environment:
+      POSTGRES_HOST: mem0-postgres
+      POSTGRES_PORT: "5432"
+      ADMIN_API_KEY: ${MEM0_ADMIN_API_KEY}
       AUTH_DISABLED: "false"
       MEM0_TELEMETRY: "false"
     ports:

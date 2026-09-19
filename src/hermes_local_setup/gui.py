@@ -14,7 +14,7 @@ from typing import Any
 
 from .capabilities import bind_capabilities, infer_model_candidate
 from .installer import Installer
-from .models import InstallAnswers, InstallMode, ProviderConfig, ProviderKind
+from .models import InstallAnswers, InstallMode, ModelCandidate, ProviderConfig, ProviderKind
 from .paths import resolve_layout
 from .resources import resource_root
 from .wizard import WizardPage, WizardState
@@ -28,7 +28,7 @@ class SetupWizard(tk.Tk):
         self.minsize(760, 560)
         self.state_model = WizardState()
         self.install_mode = tk.StringVar(value=InstallMode.HYBRID.value)
-        self.enable_mem0 = tk.BooleanVar(value=True)
+        self.enable_mem0 = tk.BooleanVar(value=False)
         self.provider_choice = tk.StringVar(value="openrouter")
         self.endpoint = tk.StringVar()
         self.credential = tk.StringVar()
@@ -36,7 +36,7 @@ class SetupWizard(tk.Tk):
         self.context_window = tk.StringVar(value="128000")
         self.status = tk.StringVar(value="Ready")
         self.providers: list[ProviderConfig] = []
-        self.models = []
+        self.models: list[ModelCandidate] = []
         self.credentials: dict[str, str] = {}
         self.provider_catalog = self._load_provider_catalog()
 
@@ -85,7 +85,7 @@ class SetupWizard(tk.Tk):
             WizardPage.SYSTEM_CHECK: self._system_check,
             WizardPage.MODE: self._mode,
             WizardPage.PROVIDERS: self._providers,
-            WizardPage.OPTIONS: self._options,
+            WizardPage.OPTIONS: self._render_options,
             WizardPage.REVIEW: self._review,
             WizardPage.INSTALL: self._install,
             WizardPage.VERIFY: self._verify,
@@ -137,9 +137,9 @@ class SetupWizard(tk.Tk):
             (InstallMode.LOCAL, "Fully local", "No cloud inference; requires a capable computer."),
         )
         for row, (mode, title, detail) in enumerate(choices):
-            ttk.Radiobutton(
-                frame, text=title, value=mode.value, variable=self.install_mode
-            ).grid(row=row * 2, column=0, sticky="w", pady=(8, 0))
+            ttk.Radiobutton(frame, text=title, value=mode.value, variable=self.install_mode).grid(
+                row=row * 2, column=0, sticky="w", pady=(8, 0)
+            )
             ttk.Label(frame, text=detail, foreground="#555555").grid(
                 row=row * 2 + 1, column=0, sticky="w", padx=(24, 0)
             )
@@ -218,7 +218,7 @@ class SetupWizard(tk.Tk):
         except (KeyError, ValueError) as error:
             messagebox.showerror("Provider could not be added", str(error), parent=self)
 
-    def _options(self) -> None:
+    def _render_options(self) -> None:
         frame = ttk.Frame(self.content)
         frame.grid(row=0, column=0, sticky="nw")
         ttk.Checkbutton(
@@ -244,14 +244,20 @@ class SetupWizard(tk.Tk):
     def _install(self) -> None:
         frame = ttk.Frame(self.content)
         frame.grid(row=0, column=0, sticky="nw")
-        ttk.Label(frame, text="Ready to install the local system.").grid(row=0, column=0, sticky="w")
+        ttk.Label(frame, text="Ready to install the local system.").grid(
+            row=0, column=0, sticky="w"
+        )
         ttk.Button(frame, text="Install now", command=self._start_install).grid(
             row=1, column=0, sticky="w", pady=20
         )
 
     def _start_install(self) -> None:
         if not self.providers:
-            messagebox.showerror("Provider required", "Add at least one model provider.", parent=self)
+            messagebox.showerror(
+                "Provider required",
+                "Add at least one model provider.",
+                parent=self,
+            )
             return
         self.next_button.configure(state="disabled")
         self.back_button.configure(state="disabled")
@@ -275,7 +281,8 @@ class SetupWizard(tk.Tk):
                 )
                 self.after(0, self._install_complete)
             except Exception as error:  # GUI boundary reports a safe, concise failure.
-                self.after(0, lambda: self._install_failed(str(error)))
+                message = str(error)
+                self.after(0, lambda: self._install_failed(message))
 
         threading.Thread(target=work, daemon=True).start()
 
