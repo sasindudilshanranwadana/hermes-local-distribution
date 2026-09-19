@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "default_enabled": ["omniroute"],
+  "optional": ["github", "context7", "postgres", "docker", "playwright", "firecrawl", "graphify"],
+  "rules": {
+    "credentials": "local-secret-store-only",
+    "remote_servers": "explicit-opt-in",
+    "write_tools": "smart-approval"
+  }
+}
+

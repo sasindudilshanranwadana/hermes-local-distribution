@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "required": ["fast", "coding", "agentic", "reasoning"],
+  "optional": ["long-context", "vision"],
+  "minimum_context": {
+    "fast": 16000,
+    "coding": 64000,
+    "agentic": 64000,
+    "reasoning": 64000,
+    "long-context": 128000,
+    "vision": 32000
+  }
+}
+

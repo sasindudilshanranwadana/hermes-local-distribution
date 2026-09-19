@@ -3,30 +3,41 @@
 from __future__ import annotations
 
 import json
+import ipaddress
 import re
 
 from .models import Capability, CapabilityBinding, ModelCandidate
 
 
-_ROLE_POOLS = {
-    Capability.CODING: "pool-coding-complex",
-    Capability.AGENTIC: "pool-agentic-complex",
-    Capability.REASONING: "pool-reasoning-complex",
-    Capability.FAST: "pool-conversation-simple",
-    Capability.LONG_CONTEXT: "pool-long-context",
-    Capability.VISION: "pool-vision",
-}
+_ROLE_POOLS = (
+    (Capability.CODING, "pool-coding-simple"),
+    (Capability.CODING, "pool-coding-complex"),
+    (Capability.AGENTIC, "pool-agentic-simple"),
+    (Capability.AGENTIC, "pool-agentic-complex"),
+    (Capability.REASONING, "pool-reasoning-simple"),
+    (Capability.REASONING, "pool-reasoning-complex"),
+    (Capability.FAST, "pool-chat"),
+    (Capability.LONG_CONTEXT, "pool-long-context"),
+    (Capability.VISION, "pool-vision"),
+)
 
-_FORBIDDEN_MARKERS = ("100.81.25.128", "/root", "sasivps")
 _INLINE_SECRET = re.compile(
     r"(?i)\b[A-Z][A-Z0-9_]*(?:KEY|TOKEN|SECRET|PASSWORD)[A-Z0-9_]*\s*=\s*[^$\s][^\s]*"
 )
 
 
 def validate_portable_text(text: str) -> None:
-    marker = next((value for value in _FORBIDDEN_MARKERS if value in text), None)
-    if marker:
-        raise ValueError(f"generated text contains forbidden host marker: {marker}")
+    if re.search(r"/(?:root)(?:/|$)", text):
+        raise ValueError("generated text contains a privileged home path")
+    if re.search(r"\b[a-z][a-z0-9-]*vps\b", text, flags=re.IGNORECASE):
+        raise ValueError("generated text contains a host-specific VPS name")
+    for raw_address in re.findall(r"(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?![\d.])", text):
+        try:
+            address = ipaddress.ip_address(raw_address)
+        except ValueError:
+            continue
+        if not address.is_loopback:
+            raise ValueError("generated text contains a non-loopback IP address")
     if _INLINE_SECRET.search(text):
         raise ValueError("generated text contains an inline secret")
 
@@ -42,7 +53,7 @@ def _model_entry(model: ModelCandidate) -> dict[str, object]:
 
 def render_routing_policy(binding: CapabilityBinding) -> str:
     combos: list[dict[str, object]] = []
-    for role, pool_name in _ROLE_POOLS.items():
+    for role, pool_name in _ROLE_POOLS:
         primary = binding.primary.get(role)
         if primary is None:
             continue
@@ -58,4 +69,3 @@ def render_routing_policy(binding: CapabilityBinding) -> str:
     rendered = json.dumps({"schema_version": 1, "combos": combos}, indent=2, sort_keys=True)
     validate_portable_text(rendered)
     return f"{rendered}\n"
-

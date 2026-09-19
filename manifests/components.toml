@@ -1,0 +1,34 @@
+schema_version = 1
+kit_version = "0.1.0a1"
+
+[[component]]
+id = "hermes-agent"
+version = "0.21.3"
+source = "https://github.com/NousResearch/hermes-agent"
+revision = "4716ec0ba4e212105f8f162c226f052b25f8a76b"
+license = "MIT"
+redistributable = true
+
+[[component]]
+id = "omniroute"
+version = "3.8.50"
+source = "https://github.com/diegosouzapw/OmniRoute"
+image = "diegosouzapw/omniroute@sha256:085c57adf499a8aaa9f35ccde95c0df9c11bd9ecd18d6c9edbf3b68b8079ba9d"
+license = "MIT"
+redistributable = true
+
+[[component]]
+id = "mem0"
+source = "https://github.com/mem0ai/mem0"
+revision = "19cb89aff472325c707f64b2f34ae6afdbf7faf7"
+license = "Apache-2.0"
+redistributable = true
+optional = true
+
+[[component]]
+id = "preclassifier"
+source = "local-maintained-component"
+revision = "private-alpha"
+license = "license-decision-pending"
+redistributable = false
+

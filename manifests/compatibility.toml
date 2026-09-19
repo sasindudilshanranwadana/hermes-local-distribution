@@ -1,0 +1,7 @@
+schema_version = 1
+kit_version = "0.1.0a1"
+hermes_minimum = "0.21.3"
+hermes_tested = "0.21.3"
+policy_schema = 1
+local_patches_applied = false
+

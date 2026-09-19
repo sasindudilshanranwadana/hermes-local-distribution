@@ -1,0 +1,49 @@
+schema_version = 1
+
+[[provider]]
+id = "openrouter"
+label = "OpenRouter"
+kind = "openai-compatible"
+base_url = "https://openrouter.ai/api/v1"
+credential_env = "OPENROUTER_API_KEY"
+
+[[provider]]
+id = "openai"
+label = "OpenAI"
+kind = "openai-compatible"
+base_url = "https://api.openai.com/v1"
+credential_env = "OPENAI_API_KEY"
+
+[[provider]]
+id = "anthropic"
+label = "Anthropic"
+kind = "openai-compatible"
+base_url = "https://api.anthropic.com/v1"
+credential_env = "ANTHROPIC_API_KEY"
+
+[[provider]]
+id = "gemini"
+label = "Google Gemini"
+kind = "openai-compatible"
+base_url = "https://generativelanguage.googleapis.com/v1beta/openai"
+credential_env = "GEMINI_API_KEY"
+
+[[provider]]
+id = "deepseek"
+label = "DeepSeek"
+kind = "openai-compatible"
+base_url = "https://api.deepseek.com/v1"
+credential_env = "DEEPSEEK_API_KEY"
+
+[[provider]]
+id = "ollama"
+label = "Ollama"
+kind = "ollama"
+base_url = "http://127.0.0.1:11434/v1"
+
+[[provider]]
+id = "lm-studio"
+label = "LM Studio"
+kind = "lm-studio"
+base_url = "http://127.0.0.1:1234/v1"
+

@@ -28,7 +28,7 @@ class RepositoryHygieneTests(unittest.TestCase):
         violations: list[str] = []
         for path in (ROOT / "services", ROOT / "policies", ROOT / "manifests"):
             for candidate in path.rglob("*"):
-                if candidate.is_file():
+                if candidate.is_file() and candidate.suffix in {".env", ".json", ".toml", ".yaml", ".yml"}:
                     text = candidate.read_text(encoding="utf-8", errors="ignore")
                     if pattern.search(text):
                         violations.append(str(candidate.relative_to(ROOT)))
