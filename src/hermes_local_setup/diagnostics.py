@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import json
 import zipfile
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Mapping
 
 from .health import HealthReport
 from .redaction import SecretRedactor
@@ -40,4 +40,3 @@ def create_support_bundle(
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         for name, contents in files.items():
             archive.writestr(name, contents)
-

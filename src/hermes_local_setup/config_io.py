@@ -15,7 +15,6 @@ from .models import (
     ProviderKind,
 )
 
-
 _ROOT_FIELDS = {"mode", "enable_mem0", "providers", "models"}
 _PROVIDER_FIELDS = {
     "provider_id",
@@ -97,4 +96,3 @@ def load_answers(path: Path) -> tuple[InstallAnswers, tuple[ModelCandidate, ...]
     if not models:
         raise ValueError("at least one model is required")
     return answers, tuple(models)
-

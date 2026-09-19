@@ -1,6 +1,6 @@
 import unittest
 
-from hermes_local_setup.capabilities import bind_capabilities
+from hermes_local_setup.capabilities import bind_capabilities, infer_model_candidate
 from hermes_local_setup.models import Capability, ModelCandidate
 
 
@@ -43,6 +43,22 @@ class CapabilityBindingTests(unittest.TestCase):
     def test_rejects_empty_model_catalog(self) -> None:
         with self.assertRaisesRegex(ValueError, "model"):
             bind_capabilities(())
+
+    def test_infers_common_model_roles_conservatively(self) -> None:
+        coder = infer_model_candidate(
+            provider_id="local", model_id="qwen-coder-vl", context_window=131072
+        )
+        self.assertIn(Capability.CODING, coder.capabilities)
+        self.assertIn(Capability.AGENTIC, coder.capabilities)
+        self.assertIn(Capability.VISION, coder.capabilities)
+        self.assertIn(Capability.LONG_CONTEXT, coder.capabilities)
+        self.assertTrue(coder.supports_tools)
+
+        small = infer_model_candidate(
+            provider_id="local", model_id="tiny-small-3b", context_window=16000
+        )
+        self.assertIn(Capability.FAST, small.capabilities)
+        self.assertFalse(small.supports_tools)
 
 
 if __name__ == "__main__":

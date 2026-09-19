@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Mapping
 
 
 @dataclass(frozen=True, slots=True)
@@ -16,9 +16,7 @@ class AppLayout:
     services_dir: Path
 
 
-def resolve_layout(
-    *, platform_name: str, home: Path, environ: Mapping[str, str]
-) -> AppLayout:
+def resolve_layout(*, platform_name: str, home: Path, environ: Mapping[str, str]) -> AppLayout:
     if platform_name == "Windows":
         base = Path(environ.get("LOCALAPPDATA", str(home / "AppData" / "Local")))
         data_dir = base / "HermesLocalDistribution"
@@ -38,4 +36,3 @@ def resolve_layout(
         state_file=config_dir / "install-state.json",
         services_dir=data_dir / "services",
     )
-

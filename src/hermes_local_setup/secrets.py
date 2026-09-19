@@ -5,9 +5,8 @@ from __future__ import annotations
 import os
 import re
 import tempfile
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Mapping
-
 
 _SECRET_NAME = re.compile(r"^[A-Z][A-Z0-9_]*$")
 

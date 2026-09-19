@@ -33,7 +33,7 @@ class OmniRouteClientTests(unittest.TestCase):
         method, url, headers, body = calls[0]
         self.assertEqual((method, url), ("POST", "http://127.0.0.1:20128/api/providers"))
         self.assertEqual(headers["Authorization"], f"Bearer {management_key}")
-        self.assertEqual(json.loads(body or b"{}") ["apiKey"], provider_key)
+        self.assertEqual(json.loads(body or b"{}")["apiKey"], provider_key)
         self.assertNotIn(provider_key, repr(client))
         self.assertNotIn(management_key, repr(client))
 
@@ -56,7 +56,32 @@ class OmniRouteClientTests(unittest.TestCase):
             )
         self.assertNotIn(secret, str(raised.exception))
 
+    def test_ensure_provider_and_combo_update_existing_resources(self) -> None:
+        methods: list[tuple[str, str]] = []
+
+        def transport(
+            method: str, url: str, headers: dict[str, str], body: bytes | None, timeout: float
+        ) -> tuple[int, bytes]:
+            methods.append((method, url))
+            if method == "GET" and url.endswith("/api/providers"):
+                return 200, b'{"connections":[{"id":"p1","provider":"openai","name":"OpenAI"}]}'
+            if method == "GET" and url.endswith("/api/combos"):
+                return 200, b'{"combos":[{"id":"c1","name":"pool-chat"}]}'
+            return 200, b"{}"
+
+        client = OmniRouteClient(
+            base_url="http://127.0.0.1:20128",
+            management_token="management",
+            transport=transport,
+        )
+        identifier = client.ensure_provider(
+            provider="openai", name="OpenAI", url="https://api.openai.com/v1", api_key="key"
+        )
+        client.ensure_combo({"name": "pool-chat", "models": []})
+        self.assertEqual(identifier, "p1")
+        self.assertIn(("PATCH", "http://127.0.0.1:20128/api/providers/p1"), methods)
+        self.assertIn(("PUT", "http://127.0.0.1:20128/api/combos/c1"), methods)
+
 
 if __name__ == "__main__":
     unittest.main()
-

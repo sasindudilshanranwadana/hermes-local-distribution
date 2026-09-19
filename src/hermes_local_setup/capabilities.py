@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from .models import Capability, CapabilityBinding, ModelCandidate
 
-
 _REQUIRES_TOOLS = {Capability.CODING, Capability.AGENTIC}
 
 
@@ -37,7 +36,10 @@ def bind_capabilities(models: tuple[ModelCandidate, ...]) -> CapabilityBinding:
     degraded: set[Capability] = set()
     for role in Capability:
         ranked = tuple(
-            sorted(models, key=lambda model: (-_score(model, role), model.provider_id, model.model_id))
+            sorted(
+                models,
+                key=lambda model: (-_score(model, role), model.provider_id, model.model_id),
+            )
         )
         viable = tuple(model for model in ranked if _score(model, role) >= 0)
         if viable:

@@ -31,6 +31,10 @@ addopts = "-ra --strict-markers"
 [tool.coverage.run]
 source = ["hermes_local_setup"]
 branch = true
+omit = [
+  "src/hermes_local_setup/gui.py",
+  "src/hermes_local_setup/packaged_entry.py",
+]
 
 [tool.coverage.report]
 fail_under = 80
@@ -39,13 +43,16 @@ show_missing = true
 [tool.ruff]
 target-version = "py311"
 line-length = 100
+extend-exclude = ["services/preclassifier"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "S", "SIM", "RUF"]
 ignore = ["S101"]
 
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "S105", "S106", "S603", "S607"]
+
 [tool.mypy]
 python_version = "3.11"
 strict = true
 packages = ["hermes_local_setup"]
-

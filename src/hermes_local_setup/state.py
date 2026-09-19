@@ -9,7 +9,6 @@ import tempfile
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-
 _SECRET_SHAPE = re.compile(r"(?:sk-|ghp_|github_pat_|Bearer\s+)[A-Za-z0-9_\-]{12,}")
 
 
@@ -56,4 +55,3 @@ class StateStore:
             credential_names=tuple(payload.get("credential_names", ())),
             desired_state_hash=str(payload.get("desired_state_hash", "")),
         )
-

@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 
-class WizardPage(str, Enum):
+class WizardPage(StrEnum):
     WELCOME = "Welcome"
     PRIVACY = "Privacy"
     SYSTEM_CHECK = "System check"
@@ -43,4 +43,3 @@ class WizardState:
 
     def back(self) -> WizardState:
         return WizardState(max(self.index - 1, 0))
-

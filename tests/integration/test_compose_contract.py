@@ -38,8 +38,8 @@ class ComposeContractTests(unittest.TestCase):
         compose = (ROOT / "services" / "compose.yaml").read_text(encoding="utf-8")
         self.assertIn("POSTGRES_HOST: mem0-postgres", compose)
         self.assertIn("ADMIN_API_KEY: ${MEM0_ADMIN_API_KEY}", compose)
-        self.assertIn("AUTH_DISABLED: \"false\"", compose)
-        self.assertIn("MEM0_TELEMETRY: \"false\"", compose)
+        self.assertIn('AUTH_DISABLED: "false"', compose)
+        self.assertIn('MEM0_TELEMETRY: "false"', compose)
 
 
 if __name__ == "__main__":

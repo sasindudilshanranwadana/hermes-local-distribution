@@ -6,7 +6,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -46,6 +45,26 @@ class CliTests(unittest.TestCase):
             result = self._run("support-bundle", "--output", str(output))
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertTrue(output.is_file())
+
+    def test_repair_dry_run_and_uninstall_plan(self) -> None:
+        repair = self._run(
+            "repair",
+            "--answers",
+            "tests/fixtures/local_answers.json",
+            "--dry-run",
+        )
+        self.assertEqual(repair.returncode, 0, repair.stderr)
+        self.assertIn("mode=dry-run", repair.stdout)
+        uninstall = self._run("uninstall-plan")
+        self.assertEqual(uninstall.returncode, 0, uninstall.stderr)
+        self.assertIn("Preserve memories", uninstall.stdout)
+
+    def test_doctor_returns_structured_status(self) -> None:
+        result = self._run("doctor")
+        self.assertIn(result.returncode, {0, 1})
+        payload = json.loads(result.stdout)
+        self.assertIn("overall", payload)
+        self.assertGreaterEqual(len(payload["checks"]), 2)
 
 
 if __name__ == "__main__":

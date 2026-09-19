@@ -4,7 +4,6 @@ from pathlib import Path
 
 from hermes_local_setup.hermes_config import build_hermes_actions, load_golden_policy
 
-
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -37,4 +36,3 @@ class HermesConfigTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

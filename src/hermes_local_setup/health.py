@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 
-class HealthLevel(str, Enum):
+class HealthLevel(StrEnum):
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     ACTION_REQUIRED = "action-required"
@@ -37,4 +37,3 @@ class HealthReport:
         if not self.checks:
             return HealthLevel.UNAVAILABLE
         return max((check.level for check in self.checks), key=_SEVERITY.__getitem__)
-

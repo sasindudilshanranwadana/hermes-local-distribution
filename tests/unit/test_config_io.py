@@ -4,7 +4,6 @@ from pathlib import Path
 from hermes_local_setup.config_io import load_answers
 from hermes_local_setup.models import Capability, InstallMode
 
-
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -27,4 +26,3 @@ class ConfigIoTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -16,13 +16,13 @@ from .capabilities import bind_capabilities
 from .config_io import load_answers
 from .diagnostics import create_support_bundle
 from .health import HealthCheck, HealthLevel, HealthReport
-from .installer import Installer
-from .paths import resolve_layout
+from .installer import Installer, InstallReport
+from .paths import AppLayout, resolve_layout
 from .redaction import SecretRedactor
 from .secrets import SecretStore
 
 
-def _layout():
+def _layout() -> AppLayout:
     return resolve_layout(
         platform_name=platform.system(),
         home=Path.home(),
@@ -30,7 +30,7 @@ def _layout():
     )
 
 
-def _report_payload(report) -> dict[str, object]:
+def _report_payload(report: InstallReport) -> dict[str, object]:
     return {
         "completed": list(report.completed),
         "desired_state_hash": report.desired_state_hash,

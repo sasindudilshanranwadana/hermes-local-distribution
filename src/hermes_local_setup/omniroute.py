@@ -10,7 +10,6 @@ from typing import Any
 
 from .redaction import SecretRedactor
 
-
 Transport = Callable[[str, str, dict[str, str], bytes | None, float], tuple[int, bytes]]
 
 
@@ -21,9 +20,12 @@ class OmniRouteError(RuntimeError):
 def _transport(
     method: str, url: str, headers: dict[str, str], body: bytes | None, timeout: float
 ) -> tuple[int, bytes]:
-    request = urllib.request.Request(url, headers=headers, data=body, method=method)
+    # OmniRouteClient is constructed with the fixed loopback management URL.
+    request = urllib.request.Request(  # noqa: S310
+        url, headers=headers, data=body, method=method
+    )
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
+        with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
             return response.status, response.read(1_000_000)
     except urllib.error.HTTPError as error:
         return error.code, error.read(100_000)

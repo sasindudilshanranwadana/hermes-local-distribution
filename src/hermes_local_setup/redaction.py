@@ -29,4 +29,3 @@ class SecretRedactor:
         redacted = self._PATTERNS[1].sub(r"\1=[REDACTED]", redacted)
         redacted = self._PATTERNS[2].sub("[REDACTED]", redacted)
         return redacted
-

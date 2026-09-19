@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from .render import validate_portable_text
 
@@ -13,9 +13,11 @@ def load_golden_policy(path: Path) -> dict[str, Any]:
     text = path.read_text(encoding="utf-8")
     validate_portable_text(text)
     payload = json.loads(text)
+    if not isinstance(payload, dict):
+        raise ValueError("golden policy must be a JSON object")
     if payload.get("schema_version") != 1 or not isinstance(payload.get("settings"), dict):
         raise ValueError("unsupported golden policy schema")
-    return payload
+    return cast(dict[str, Any], payload)
 
 
 def _stringify(value: object) -> str:
@@ -40,4 +42,3 @@ def build_hermes_actions(policy: dict[str, Any]) -> tuple[tuple[str, ...], ...]:
         actions.append(("hermes", "tools", "disable", str(name)))
     actions.append(("hermes", "config", "check"))
     return tuple(actions)
-

@@ -45,11 +45,9 @@ class RenderingTests(unittest.TestCase):
             "sasivps",
             "OPENAI_API_KEY=real-value",
         ):
-            with self.subTest(unsafe=unsafe):
-                with self.assertRaises(ValueError):
-                    validate_portable_text(unsafe)
+            with self.subTest(unsafe=unsafe), self.assertRaises(ValueError):
+                validate_portable_text(unsafe)
 
 
 if __name__ == "__main__":
     unittest.main()
-

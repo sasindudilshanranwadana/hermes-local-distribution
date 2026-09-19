@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import os
 import subprocess
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Mapping, Sequence
 
 from .redaction import SecretRedactor
 
@@ -50,7 +50,7 @@ class CommandRunner:
             raise ValueError("secret values must not appear in command argv")
         if self.dry_run:
             return CommandResult(normalized, 0, "dry-run", "", True)
-        completed = subprocess.run(
+        completed = subprocess.run(  # noqa: S603 - argv is structured and shell is disabled.
             normalized,
             cwd=cwd,
             env=dict(env) if env is not None else None,
@@ -64,4 +64,3 @@ class CommandRunner:
         stdout = self.redactor.redact(completed.stdout[: self.max_output_chars])
         stderr = self.redactor.redact(completed.stderr[: self.max_output_chars])
         return CommandResult(normalized, completed.returncode, stdout, stderr)
-

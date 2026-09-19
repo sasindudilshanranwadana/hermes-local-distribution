@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import json
 import ipaddress
+import json
 import re
 
 from .models import Capability, CapabilityBinding, ModelCandidate
-
 
 _ROLE_POOLS = (
     (Capability.CODING, "pool-coding-simple"),
@@ -61,7 +60,9 @@ def render_routing_policy(binding: CapabilityBinding) -> str:
         combos.append(
             {
                 "name": pool_name,
-                "description": f"Generated {role.value} route; managed by Hermes Local Distribution.",
+                "description": (
+                    f"Generated {role.value} route; managed by Hermes Local Distribution."
+                ),
                 "strategy": "priority",
                 "models": [_model_entry(model) for model in members],
             }
