@@ -47,3 +47,9 @@ label = "LM Studio"
 kind = "lm-studio"
 base_url = "http://127.0.0.1:1234/v1"
 
+[[provider]]
+id = "custom"
+label = "Other OpenAI-compatible service"
+kind = "openai-compatible"
+base_url = "https://api.example.invalid/v1"
+credential_env = "CUSTOM_PROVIDER_API_KEY"
