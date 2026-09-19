@@ -8,6 +8,8 @@ source = "https://github.com/NousResearch/hermes-agent"
 revision = "4716ec0ba4e212105f8f162c226f052b25f8a76b"
 license = "MIT"
 redistributable = true
+unix_installer_sha256 = "38547c22f4dd2224ba68a13bc3479309abb17e295b2a2ef79c2d1b8293bd822e"
+windows_installer_sha256 = "fd547c4846b87d9ded7e3087a2fa8a3860aa8430c390eb12d49575f60f6bcba8"
 
 [[component]]
 id = "omniroute"
@@ -31,4 +33,3 @@ source = "local-maintained-component"
 revision = "private-alpha"
 license = "license-decision-pending"
 redistributable = false
-

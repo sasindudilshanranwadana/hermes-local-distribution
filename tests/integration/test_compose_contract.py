@@ -22,7 +22,7 @@ class ComposeContractTests(unittest.TestCase):
                 "docker",
                 "compose",
                 "--env-file",
-                "services/example.env",
+                "services/runtime.env.example",
                 "-f",
                 "services/compose.yaml",
                 "config",
@@ -38,4 +38,3 @@ class ComposeContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -4,19 +4,22 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import secrets
 import shutil
+import platform
+import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Mapping
 
 from .commands import CommandRunner
+from .components import download_and_install_superpowers
 from .hermes_config import build_hermes_actions, load_golden_policy
 from .models import CapabilityBinding, InstallAnswers
 from .omniroute import OmniRouteClient
 from .paths import AppLayout
 from .render import render_routing_policy
+from .resources import resource_root as default_resource_root
 from .secrets import SecretStore
 from .state import InstallState, StateStore
 
@@ -51,12 +54,14 @@ class Installer:
         resource_root: Path | None = None,
         token_factory: Callable[[], str] | None = None,
         omniroute_client: Any | None = None,
+        install_optional_components: bool = False,
     ) -> None:
         self.dry_run = dry_run
         self.runner = runner or CommandRunner(dry_run=dry_run, timeout=360.0)
-        self.resource_root = resource_root or Path(__file__).resolve().parents[2]
+        self.resource_root = resource_root or default_resource_root()
         self.token_factory = token_factory or (lambda: secrets.token_urlsafe(32))
         self.omniroute_client = omniroute_client
+        self.install_optional_components = install_optional_components
 
     @staticmethod
     def _desired_hash(
@@ -115,6 +120,8 @@ class Installer:
         if missing:
             raise ValueError("missing provider credentials: " + ", ".join(missing))
 
+        self._ensure_prerequisites()
+
         layout.data_dir.mkdir(parents=True, exist_ok=True)
         layout.config_dir.mkdir(parents=True, exist_ok=True)
         source_services = self.resource_root / "services"
@@ -168,6 +175,10 @@ class Installer:
         policy = load_golden_policy(self.resource_root / "policies" / "golden-policy.json")
         for action in build_hermes_actions(policy):
             self._run_checked(action)
+        if self.install_optional_components:
+            hermes_home = hermes_env_path.parent
+            download_and_install_superpowers(hermes_home)
+            self._run_checked(("hermes", "plugins", "enable", "superpowers"))
 
         management_token = generated["OMNIROUTE_MGMT_API_KEY"]
         client = self.omniroute_client or OmniRouteClient(
@@ -177,14 +188,16 @@ class Installer:
         for provider in answers.providers:
             if provider.credential_env is None:
                 continue
-            client.add_provider(
+            ensure_provider = getattr(client, "ensure_provider", client.add_provider)
+            ensure_provider(
                 provider=provider.provider_id,
                 name=provider.provider_id,
                 url=provider.base_url,
                 api_key=generated[provider.credential_env],
             )
         for combo in json.loads(routing_policy)["combos"]:
-            client.apply_combo(combo)
+            ensure_combo = getattr(client, "ensure_combo", client.apply_combo)
+            ensure_combo(combo)
 
         self._run_checked(
             (
@@ -205,6 +218,61 @@ class Installer:
         )
         StateStore(layout.state_file).save(state)
         return report
+
+    def _ensure_prerequisites(self) -> None:
+        if shutil.which("docker") is None:
+            raise RuntimeError(
+                "Docker Desktop is required. Install and start Docker Desktop, then choose Repair."
+            )
+        if shutil.which("hermes") is not None:
+            return
+        revision = "4716ec0ba4e212105f8f162c226f052b25f8a76b"
+        if platform.system() == "Windows":
+            script = self.resource_root / "vendor" / "hermes" / "install.ps1"
+            command = (
+                "powershell",
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                str(script),
+                "-Commit",
+                revision,
+                "-ForceCommit",
+                "-SkipSetup",
+                "-IncludeDesktop",
+            )
+        else:
+            script = self.resource_root / "vendor" / "hermes" / "install.sh"
+            command = (
+                "bash",
+                str(script),
+                "--commit",
+                revision,
+                "--force-commit",
+                "--skip-setup",
+                "--include-desktop",
+            )
+        if not script.is_file():
+            raise RuntimeError("The bundled Hermes installer is missing")
+        manifest = tomllib.loads(
+            (self.resource_root / "manifests" / "components.toml").read_text(encoding="utf-8")
+        )
+        hermes_component = next(
+            component
+            for component in manifest["component"]
+            if component.get("id") == "hermes-agent"
+        )
+        checksum_key = (
+            "windows_installer_sha256"
+            if platform.system() == "Windows"
+            else "unix_installer_sha256"
+        )
+        expected = str(hermes_component[checksum_key])
+        actual = hashlib.sha256(script.read_bytes()).hexdigest()
+        if not secrets.compare_digest(actual, expected):
+            raise RuntimeError("The bundled Hermes installer failed checksum verification")
+        self._run_checked(command)
 
     def _run_checked(self, argv: Any):
         result = self.runner.run(argv)

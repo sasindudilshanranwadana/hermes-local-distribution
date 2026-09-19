@@ -1,0 +1,23 @@
+schema_version = 1
+
+[[plugin]]
+id = "superpowers"
+source = "https://github.com/obra/superpowers"
+revision = "b36e0829c6d0140e93cfef2ca599b1b07d4a7797"
+archive_sha256 = "7c3ae7db406f8d92cf55329aa9e9a41e53f6cef00bdb68e1325713be97ef5d7c"
+license = "MIT"
+enabled = true
+
+[[skill_source]]
+id = "hermes-official"
+source = "bundled-with-hermes-agent"
+revision = "4716ec0ba4e212105f8f162c226f052b25f8a76b"
+license = "MIT"
+enabled = true
+
+[[skill_source]]
+id = "enhancement-pack-unreviewed"
+source = "local-vps-enhancement-pack"
+license = "mixed-or-unknown"
+enabled = false
+reason = "Blocked from distribution until every selected skill has confirmed provenance and redistribution rights."

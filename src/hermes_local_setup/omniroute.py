@@ -81,6 +81,35 @@ class OmniRouteClient:
             raise OmniRouteError("OmniRoute created a provider without returning its identifier")
         return identifier
 
+    def ensure_provider(self, *, provider: str, name: str, url: str, api_key: str) -> str:
+        response = self._request("GET", "/api/providers")
+        connections = response.get("connections", []) if isinstance(response, dict) else response
+        for connection in connections if isinstance(connections, list) else []:
+            if not isinstance(connection, dict):
+                continue
+            if connection.get("provider") == provider and connection.get("name") == name:
+                identifier = connection.get("id")
+                if not isinstance(identifier, str) or not identifier:
+                    continue
+                self._request(
+                    "PATCH",
+                    f"/api/providers/{identifier}",
+                    {"provider": provider, "name": name, "url": url, "apiKey": api_key},
+                )
+                return identifier
+        return self.add_provider(provider=provider, name=name, url=url, api_key=api_key)
+
     def apply_combo(self, combo: dict[str, object]) -> None:
         self._request("POST", "/api/combos", combo)
 
+    def ensure_combo(self, combo: dict[str, object]) -> None:
+        response = self._request("GET", "/api/combos")
+        items = response.get("combos", []) if isinstance(response, dict) else response
+        for current in items if isinstance(items, list) else []:
+            if not isinstance(current, dict) or current.get("name") != combo.get("name"):
+                continue
+            identifier = current.get("id")
+            if isinstance(identifier, str) and identifier:
+                self._request("PUT", f"/api/combos/{identifier}", combo)
+                return
+        self.apply_combo(combo)

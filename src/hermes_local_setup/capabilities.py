@@ -49,3 +49,36 @@ def bind_capabilities(models: tuple[ModelCandidate, ...]) -> CapabilityBinding:
         if required not in primary:
             raise ValueError(f"no viable model for required capability: {required.value}")
     return CapabilityBinding(primary=primary, fallbacks=fallbacks, degraded=frozenset(degraded))
+
+
+def infer_model_candidate(
+    *, provider_id: str, model_id: str, context_window: int = 64_000
+) -> ModelCandidate:
+    """Create a conservative initial profile from a discovered model identifier.
+
+    The wizard shows the resulting roles before installation. Users can change
+    the context size and tool-support choice when provider metadata is absent.
+    """
+    lowered = model_id.lower()
+    capabilities: set[Capability] = {Capability.REASONING}
+    if any(token in lowered for token in ("flash", "mini", "haiku", "small", "1.5b", "3b")):
+        capabilities.add(Capability.FAST)
+    if any(
+        token in lowered
+        for token in ("coder", "codex", "claude", "gpt", "qwen", "gemini", "deepseek")
+    ):
+        capabilities.update({Capability.CODING, Capability.AGENTIC})
+    if any(token in lowered for token in ("vision", "vl", "multimodal", "gpt-4o")):
+        capabilities.add(Capability.VISION)
+    if context_window >= 128_000:
+        capabilities.add(Capability.LONG_CONTEXT)
+    if Capability.FAST not in capabilities:
+        capabilities.add(Capability.FAST)
+    supports_tools = Capability.AGENTIC in capabilities
+    return ModelCandidate(
+        provider_id=provider_id,
+        model_id=model_id,
+        capabilities=frozenset(capabilities),
+        context_window=context_window,
+        supports_tools=supports_tools,
+    )

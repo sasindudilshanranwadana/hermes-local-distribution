@@ -19,7 +19,7 @@ services:
       context: ./omniroute
       dockerfile: Dockerfile.hardened
     restart: unless-stopped
-    env_file: ["${HERMES_LOCAL_SECRETS_FILE:-example.env}"]
+    env_file: ["${HERMES_LOCAL_SECRETS_FILE:?Run the setup wizard first}"]
     environment:
       DATA_DIR: /app/data
       PORT: "20128"
@@ -66,7 +66,7 @@ services:
       context: ./preclassifier
       target: runtime
     restart: unless-stopped
-    env_file: ["${HERMES_LOCAL_SECRETS_FILE:-example.env}"]
+    env_file: ["${HERMES_LOCAL_SECRETS_FILE:?Run the setup wizard first}"]
     environment:
       OMNIROUTE_BASE: http://omniroute:20129/v1
       OMNIROUTE_DB_PATH: /omniroute-data/storage.sqlite
@@ -92,7 +92,7 @@ services:
     profiles: ["mem0"]
     image: pgvector/pgvector:pg17
     restart: unless-stopped
-    env_file: ["${HERMES_LOCAL_SECRETS_FILE:-example.env}"]
+    env_file: ["${HERMES_LOCAL_SECRETS_FILE:?Run the setup wizard first}"]
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-mem0}
       POSTGRES_USER: ${POSTGRES_USER:-mem0}
@@ -111,7 +111,7 @@ services:
       context: ./mem0/source/server
       dockerfile: Dockerfile
     restart: unless-stopped
-    env_file: ["${HERMES_LOCAL_SECRETS_FILE:-example.env}"]
+    env_file: ["${HERMES_LOCAL_SECRETS_FILE:?Run the setup wizard first}"]
     environment:
       AUTH_DISABLED: "false"
       MEM0_TELEMETRY: "false"
@@ -134,4 +134,3 @@ networks:
   memory:
     internal: true
   frontend:
-

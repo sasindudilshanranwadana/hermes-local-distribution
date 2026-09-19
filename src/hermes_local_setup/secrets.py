@@ -48,6 +48,17 @@ class SecretStore:
     def names(self) -> tuple[str, ...]:
         return tuple(sorted(self._read()))
 
+    def get_many(self, names: tuple[str, ...] | None = None) -> dict[str, str]:
+        """Return requested values for an immediate privileged operation.
+
+        Callers must not log, serialize, or include the returned mapping in
+        command arguments.
+        """
+        values = self._read()
+        if names is None:
+            return values
+        return {name: values[name] for name in names if name in values}
+
     def set(self, name: str, value: str) -> None:
         self.set_many({name: value})
 
@@ -76,4 +87,3 @@ class SecretStore:
         finally:
             if temporary_path.exists():
                 temporary_path.unlink()
-

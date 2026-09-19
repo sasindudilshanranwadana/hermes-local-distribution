@@ -19,6 +19,7 @@ from .health import HealthCheck, HealthLevel, HealthReport
 from .installer import Installer
 from .paths import resolve_layout
 from .redaction import SecretRedactor
+from .secrets import SecretStore
 
 
 def _layout():
@@ -57,10 +58,36 @@ def _run_install(args: argparse.Namespace) -> int:
         print("install requires either --dry-run or explicit --apply", file=sys.stderr)
         return 2
     answers, models = load_answers(args.answers)
+    credentials = (
+        SecretStore(args.secrets_file).get_many()
+        if args.apply and args.secrets_file is not None
+        else {}
+    )
     report = Installer(dry_run=not args.apply).install(
         answers=answers,
         binding=bind_capabilities(models),
         layout=_layout(),
+        credentials=credentials,
+    )
+    print(report.as_text())
+    return 0
+
+
+def _run_repair(args: argparse.Namespace) -> int:
+    if not args.apply and not args.dry_run:
+        print("repair requires either --dry-run or explicit --apply", file=sys.stderr)
+        return 2
+    answers, models = load_answers(args.answers)
+    credentials = (
+        SecretStore(args.secrets_file).get_many()
+        if args.apply and args.secrets_file is not None
+        else {}
+    )
+    report = Installer(dry_run=not args.apply).repair(
+        answers=answers,
+        binding=bind_capabilities(models),
+        layout=_layout(),
+        credentials=credentials,
     )
     print(report.as_text())
     return 0
@@ -133,7 +160,19 @@ def build_parser() -> argparse.ArgumentParser:
     install.add_argument("--answers", type=Path, required=True)
     install.add_argument("--dry-run", action="store_true")
     install.add_argument("--apply", action="store_true")
+    install.add_argument(
+        "--secrets-file",
+        type=Path,
+        help="owner-only environment file; values are never accepted as command arguments",
+    )
     install.set_defaults(handler=_run_install)
+
+    repair = subparsers.add_parser("repair", help="restore the declared local system state")
+    repair.add_argument("--answers", type=Path, required=True)
+    repair.add_argument("--dry-run", action="store_true")
+    repair.add_argument("--apply", action="store_true")
+    repair.add_argument("--secrets-file", type=Path)
+    repair.set_defaults(handler=_run_repair)
 
     doctor = subparsers.add_parser("doctor", help="check prerequisites and service health")
     doctor.set_defaults(handler=_run_doctor)
@@ -152,6 +191,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
+    if argv is None and len(sys.argv) == 1:
+        argv = ["gui"]
     args = parser.parse_args(argv)
     try:
         return int(args.handler(args))
@@ -162,4 +203,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
