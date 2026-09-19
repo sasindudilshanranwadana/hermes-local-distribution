@@ -70,9 +70,7 @@ def install_superpowers_archive(data: bytes, *, expected_sha256: str, destinatio
             shutil.rmtree(temporary)
 
 
-def install_mem0_server_archive(
-    data: bytes, *, expected_sha256: str, destination: Path
-) -> None:
+def install_mem0_server_archive(data: bytes, *, expected_sha256: str, destination: Path) -> None:
     """Install only the pinned Mem0 server subtree from an upstream archive."""
     actual = hashlib.sha256(data).hexdigest()
     if not secrets_compare(actual, expected_sha256):
@@ -89,6 +87,8 @@ def install_mem0_server_archive(
                     continue
                 relative = Path(*source_path.parts[2:])
                 if member.isdir():
+                    continue
+                if member.issym() or member.islnk():
                     continue
                 if not member.isfile():
                     raise ValueError("unsafe non-file entry in Mem0 server archive")
