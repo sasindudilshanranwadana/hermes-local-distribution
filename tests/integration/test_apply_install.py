@@ -100,6 +100,10 @@ class ApplyInstallTests(unittest.TestCase):
                 patch(
                     "hermes_local_setup.installer.download_and_install_superpowers"
                 ) as superpowers_installer,
+                patch(
+                    "hermes_local_setup.installer.shutil.which",
+                    return_value="/mock/bin/tool",
+                ),
             ):
                 report = installer.install(
                     answers=answers,

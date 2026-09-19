@@ -1,3 +1,4 @@
+import hashlib
 import re
 import tomllib
 import unittest
@@ -13,6 +14,19 @@ class RepositoryHygieneTests(unittest.TestCase):
         providers = {entry["id"]: entry for entry in payload["provider"]}
         self.assertEqual(providers["custom"]["kind"], "openai-compatible")
         self.assertEqual(providers["custom"]["credential_env"], "CUSTOM_PROVIDER_API_KEY")
+
+    def test_bundled_hermes_installers_match_manifest_checksums(self) -> None:
+        payload = tomllib.loads(
+            (ROOT / "manifests" / "components.toml").read_text(encoding="utf-8")
+        )
+        hermes = next(item for item in payload["component"] if item["id"] == "hermes-agent")
+        expected = {
+            ROOT / "vendor" / "hermes" / "install.sh": hermes["unix_installer_sha256"],
+            ROOT / "vendor" / "hermes" / "install.ps1": hermes["windows_installer_sha256"],
+        }
+        for path, checksum in expected.items():
+            with self.subTest(path=path.name):
+                self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), checksum)
 
     def test_preclassifier_has_container_test_stage_and_ci_gate(self) -> None:
         dockerfile = (ROOT / "services" / "preclassifier" / "Dockerfile").read_text(

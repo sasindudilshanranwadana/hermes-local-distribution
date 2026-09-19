@@ -1,4 +1,5 @@
 import re
+import shutil
 import subprocess
 import unittest
 from pathlib import Path
@@ -15,6 +16,7 @@ class ComposeContractTests(unittest.TestCase):
         self.assertTrue(published)
         self.assertTrue(all(binding.startswith("127.0.0.1:") for binding in published))
 
+    @unittest.skipUnless(shutil.which("docker"), "Docker CLI is not installed on this runner")
     def test_compose_parses_with_example_environment(self) -> None:
         result = subprocess.run(
             [
