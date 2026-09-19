@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python: ["3.11", "3.12"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - name: Install Tk runtime (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y python3-tk
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[dev]"
+      - run: python -m pytest --cov=hermes_local_setup --cov-report=term-missing --cov-fail-under=80
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: mypy src
+      - name: Validate Compose
+        if: runner.os == 'Linux'
+        run: docker compose --env-file services/runtime.env.example -f services/compose.yaml config --quiet
+      - name: Run pre-classifier regression corpus in container
+        if: runner.os == 'Linux'
+        run: docker build --target test -f services/preclassifier/Dockerfile services/preclassifier
+      - run: python -m PyInstaller --noconfirm --clean hermes-local-setup.spec
+      - uses: actions/upload-artifact@v4
+        with:
+          name: smoke-build-${{ matrix.os }}-py${{ matrix.python }}
+          path: dist/**
+          if-no-files-found: error
+
+  repository-hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

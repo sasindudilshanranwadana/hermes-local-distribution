@@ -7,7 +7,12 @@ RUN apt-get update \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+FROM base AS test
+RUN pip install --no-cache-dir pytest==8.4.2
+COPY *.py ./
+COPY tests ./tests
+RUN PYTHONPATH=/app python -m pytest tests/test_router.py -q
+
 FROM base AS runtime
 COPY app.py .
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8801", "--timeout-graceful-shutdown", "310"]
-
