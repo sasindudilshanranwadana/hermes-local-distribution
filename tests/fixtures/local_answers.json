@@ -1,0 +1,23 @@
+{
+  "mode": "local",
+  "enable_mem0": false,
+  "providers": [
+    {
+      "provider_id": "ollama",
+      "kind": "ollama",
+      "base_url": "http://127.0.0.1:11434/v1",
+      "credential_env": null,
+      "privacy": "local"
+    }
+  ],
+  "models": [
+    {
+      "provider_id": "ollama",
+      "model_id": "qwen-local",
+      "capabilities": ["fast", "coding", "agentic", "reasoning", "long-context"],
+      "context_window": 131072,
+      "supports_tools": true
+    }
+  ]
+}
+
