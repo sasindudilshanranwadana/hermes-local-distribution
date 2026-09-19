@@ -58,9 +58,12 @@ class ProviderClientTests(unittest.TestCase):
                 seen_headers: dict[str, str] = {}
 
                 def transport(
-                    url: str, headers: dict[str, str], timeout: float
+                    url: str,
+                    headers: dict[str, str],
+                    timeout: float,
+                    target: dict[str, str] = seen_headers,
                 ) -> tuple[int, bytes]:
-                    seen_headers.update(headers)
+                    target.update(headers)
                     return 200, b'{"data":[{"id":"model-a"}]}'
 
                 provider = ProviderConfig(

@@ -16,6 +16,8 @@ from .capabilities import bind_capabilities, infer_model_candidate
 from .installer import Installer
 from .models import InstallAnswers, InstallMode, ModelCandidate, ProviderConfig, ProviderKind
 from .paths import resolve_layout
+from .providers import ProviderClient, ProviderError
+from .redaction import SecretRedactor
 from .resources import resource_root
 from .wizard import WizardPage, WizardState
 
@@ -204,10 +206,19 @@ class SetupWizard(tk.Tk):
                 model_id=model_id,
                 context_window=int(self.context_window.get()),
             )
+            key: str | None = None
             if provider.credential_env:
                 key = self.credential.get().strip()
                 if not key:
                     raise ValueError("This provider requires an API key")
+            self.status.set(f"Validating {provider.provider_id}…")
+            self.update_idletasks()
+            ProviderClient(redactor=SecretRedactor([key] if key else [])).validate_model(
+                provider,
+                key,
+                model_id,
+            )
+            if provider.credential_env and key:
                 self.credentials[provider.credential_env] = key
             self.providers.append(provider)
             self.models.append(model)
@@ -215,7 +226,8 @@ class SetupWizard(tk.Tk):
             self.model_id.set("")
             self.provider_list.insert("end", f"{provider.provider_id}: {model.model_id}")
             self.status.set(f"Added {provider.provider_id}")
-        except (KeyError, ValueError) as error:
+        except (KeyError, ProviderError, ValueError) as error:
+            self.status.set("Provider validation needs attention")
             messagebox.showerror("Provider could not be added", str(error), parent=self)
 
     def _render_options(self) -> None:

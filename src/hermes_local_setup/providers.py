@@ -11,7 +11,6 @@ from typing import Any
 from .models import ProviderConfig
 from .redaction import SecretRedactor
 
-
 Transport = Callable[[str, dict[str, str], float], tuple[int, bytes]]
 
 
@@ -20,9 +19,11 @@ class ProviderError(RuntimeError):
 
 
 def _default_transport(url: str, headers: dict[str, str], timeout: float) -> tuple[int, bytes]:
-    request = urllib.request.Request(url, headers=headers, method="GET")
+    # ProviderConfig has already restricted the endpoint to HTTP(S), with
+    # plain HTTP allowed only on loopback.
+    request = urllib.request.Request(url, headers=headers, method="GET")  # noqa: S310
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
+        with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
             return response.status, response.read(1_000_000)
     except urllib.error.HTTPError as error:
         return error.code, error.read(100_000)
@@ -46,7 +47,13 @@ class ProviderClient:
     def discover(self, provider: ProviderConfig, credential: str | None) -> tuple[str, ...]:
         headers = {"Accept": "application/json"}
         if credential:
-            headers["Authorization"] = f"Bearer {credential}"
+            if provider.provider_id == "anthropic":
+                headers["x-api-key"] = credential
+                headers["anthropic-version"] = "2023-06-01"
+            elif provider.provider_id == "gemini":
+                headers["x-goog-api-key"] = credential
+            else:
+                headers["Authorization"] = f"Bearer {credential}"
         url = f"{provider.base_url.rstrip('/')}/models"
         try:
             status, raw = self._transport(url, headers, self._timeout)
@@ -76,8 +83,19 @@ class ProviderClient:
                 )
             )
         except (json.JSONDecodeError, KeyError, TypeError):
-            raise ProviderError(f"{provider.provider_id} returned an invalid model catalog") from None
+            raise ProviderError(
+                f"{provider.provider_id} returned an invalid model catalog"
+            ) from None
         if not identifiers:
             raise ProviderError(f"{provider.provider_id} returned an empty model catalog")
         return identifiers
 
+    def validate_model(
+        self, provider: ProviderConfig, credential: str | None, model_id: str
+    ) -> None:
+        identifiers = self.discover(provider, credential)
+        if model_id not in identifiers:
+            raise ProviderError(
+                f"{model_id} is not available from {provider.provider_id}; "
+                "copy an exact model name from the provider catalog"
+            )
