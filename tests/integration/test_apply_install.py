@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from hermes_local_setup.capabilities import bind_capabilities
 from hermes_local_setup.commands import CommandResult
@@ -15,7 +16,6 @@ from hermes_local_setup.models import (
 )
 from hermes_local_setup.paths import resolve_layout
 from hermes_local_setup.state import StateStore
-
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -59,7 +59,11 @@ class ApplyInstallTests(unittest.TestCase):
                 credential_env="EXAMPLE_API_KEY",
                 privacy="cloud",
             )
-            answers = InstallAnswers(mode=InstallMode.CLOUD, providers=(provider,))
+            answers = InstallAnswers(
+                mode=InstallMode.CLOUD,
+                providers=(provider,),
+                enable_mem0=True,
+            )
             model = ModelCandidate(
                 provider_id="example",
                 model_id="strong",
@@ -81,23 +85,45 @@ class ApplyInstallTests(unittest.TestCase):
                 token_factory=lambda: "generated-safe-token-123456",
                 omniroute_client=omniroute,
             )
-            report = installer.install(
-                answers=answers,
-                binding=bind_capabilities((model,)),
-                layout=layout,
-                credentials={"EXAMPLE_API_KEY": "synthetic-provider-key"},
-            )
+            mem0_destination = layout.services_dir / "mem0" / "source" / "server"
+
+            def install_mem0(destination: Path) -> None:
+                self.assertEqual(destination, mem0_destination)
+                destination.mkdir(parents=True)
+                (destination / "Dockerfile").write_text("FROM scratch\n", encoding="utf-8")
+
+            with patch(
+                "hermes_local_setup.installer.download_and_install_mem0_server",
+                side_effect=install_mem0,
+            ) as mem0_installer:
+                report = installer.install(
+                    answers=answers,
+                    binding=bind_capabilities((model,)),
+                    layout=layout,
+                    credentials={"EXAMPLE_API_KEY": "synthetic-provider-key"},
+                )
 
             self.assertFalse(report.dry_run)
             self.assertTrue((layout.services_dir / "compose.yaml").is_file())
             self.assertTrue((layout.services_dir / "routing-policy.json").is_file())
+            self.assertTrue((mem0_destination / "Dockerfile").is_file())
+            mem0_installer.assert_called_once_with(mem0_destination)
             secret_text = layout.secrets_file.read_text(encoding="utf-8")
             self.assertIn("EXAMPLE_API_KEY=synthetic-provider-key", secret_text)
             self.assertIn("HERMES_LOCAL_ROUTER_KEY=generated-safe-token-123456", secret_text)
             hermes_env = (root / ".hermes" / ".env").read_text(encoding="utf-8")
             self.assertIn("HERMES_LOCAL_ROUTER_KEY=generated-safe-token-123456", hermes_env)
-            self.assertTrue(any(command[:2] == ("docker", "compose") for command in runner.commands))
-            self.assertTrue(any(command[:3] == ("hermes", "config", "set") for command in runner.commands))
+            self.assertTrue(
+                any(command[:2] == ("docker", "compose") for command in runner.commands)
+            )
+            self.assertTrue(
+                any("--profile" in command and "mem0" in command for command in runner.commands)
+            )
+            expected_prefix = ("hermes", "config", "set")
+            hermes_config_commands = [
+                command for command in runner.commands if command[:3] == expected_prefix
+            ]
+            self.assertTrue(hermes_config_commands)
             self.assertEqual(omniroute.providers[0]["api_key"], "synthetic-provider-key")
             self.assertGreaterEqual(len(omniroute.combos), 7)
             state = StateStore(layout.state_file).load()

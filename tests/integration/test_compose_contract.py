@@ -3,7 +3,6 @@ import subprocess
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -34,6 +33,13 @@ class ComposeContractTests(unittest.TestCase):
             check=False,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_mem0_profile_uses_the_private_database_and_generated_admin_key(self) -> None:
+        compose = (ROOT / "services" / "compose.yaml").read_text(encoding="utf-8")
+        self.assertIn("POSTGRES_HOST: mem0-postgres", compose)
+        self.assertIn("ADMIN_API_KEY: ${MEM0_ADMIN_API_KEY}", compose)
+        self.assertIn("AUTH_DISABLED: \"false\"", compose)
+        self.assertIn("MEM0_TELEMETRY: \"false\"", compose)
 
 
 if __name__ == "__main__":
