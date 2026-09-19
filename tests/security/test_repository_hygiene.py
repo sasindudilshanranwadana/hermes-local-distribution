@@ -1,4 +1,5 @@
 import re
+import tomllib
 import unittest
 from pathlib import Path
 
@@ -7,13 +8,19 @@ TEXT_SUFFIXES = {".py", ".toml", ".json", ".yaml", ".yml", ".md", ".sh", ".ps1"}
 
 
 class RepositoryHygieneTests(unittest.TestCase):
+    def test_provider_manifest_includes_generic_openai_compatible_option(self) -> None:
+        payload = tomllib.loads(
+            (ROOT / "manifests" / "providers.toml").read_text(encoding="utf-8")
+        )
+        providers = {entry["id"]: entry for entry in payload["provider"]}
+        self.assertEqual(providers["custom"]["kind"], "openai-compatible")
+        self.assertEqual(providers["custom"]["credential_env"], "CUSTOM_PROVIDER_API_KEY")
+
     def test_preclassifier_has_container_test_stage_and_ci_gate(self) -> None:
         dockerfile = (ROOT / "services" / "preclassifier" / "Dockerfile").read_text(
             encoding="utf-8"
         )
-        workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(
-            encoding="utf-8"
-        )
+        workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
 
         self.assertRegex(dockerfile, r"(?m)^FROM base AS test$")
         self.assertIn("pytest", dockerfile)
