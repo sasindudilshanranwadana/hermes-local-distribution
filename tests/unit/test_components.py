@@ -22,6 +22,31 @@ def _archive(entries: dict[str, bytes]) -> bytes:
 
 
 class ComponentInstallerTests(unittest.TestCase):
+    def test_mem0_source_ignores_archive_symlinks(self) -> None:
+        output = io.BytesIO()
+        with tarfile.open(fileobj=output, mode="w:gz") as archive:
+            for name, contents in {
+                "mem0-commit/server/Dockerfile": b"FROM python:3.12-slim\n",
+                "mem0-commit/server/main.py": b"# server\n",
+            }.items():
+                info = tarfile.TarInfo(name)
+                info.size = len(contents)
+                archive.addfile(info, io.BytesIO(contents))
+            symlink = tarfile.TarInfo("mem0-commit/server/CLAUDE.md")
+            symlink.type = tarfile.SYMTYPE
+            symlink.linkname = "AGENTS.md"
+            archive.addfile(symlink)
+        data = output.getvalue()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            destination = Path(tmp) / "server"
+            install_mem0_server_archive(
+                data,
+                expected_sha256=hashlib.sha256(data).hexdigest(),
+                destination=destination,
+            )
+            self.assertFalse((destination / "CLAUDE.md").exists())
+
     def test_installs_only_pinned_mem0_server_source(self) -> None:
         data = _archive(
             {
