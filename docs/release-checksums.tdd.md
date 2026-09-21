@@ -30,6 +30,11 @@ running it.
 7. GREEN: `python -m pytest tests/security/test_repository_hygiene.py -q`
    passed 6/6 after pinning the official Node 24 action releases. Checkpoint:
    `92de874`.
+8. The native run then isolated one remaining Node 20 annotation from Gitleaks
+   v2. RED: the Node 24 workflow contract failed after adding the current
+   Gitleaks v3.0.0 requirement. Checkpoint: `4bb3e01`.
+9. GREEN: the repository-hygiene target passed 6/6 with Gitleaks v3.0.0, whose
+   action runtime is Node 24. Checkpoint: `5452bfc`.
 
 ## Test specification
 
@@ -47,7 +52,7 @@ running it.
 - Full suite: 66/66 passed.
 - Branch-aware application coverage: 83.05%; required minimum: 80%.
 - Ruff formatting/lint and mypy strict mode passed.
-- The six RED/GREEN checkpoints are retained on `main`.
+- The eight RED/GREEN checkpoints are retained on `main`.
 - Native Windows, macOS, and Linux release workflow `35601508666` passed, and
   every downloaded checksum entry verified. The complete native evidence is
   recorded in `docs/verification-report.md`.
