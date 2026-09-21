@@ -2,7 +2,7 @@
 
 Verified locally on Linux x86_64 and with native GitHub runners on 2026-09-21:
 
-- Core suite: 66/66 passed.
+- Core suite: 68/68 passed.
 - Branch-aware coverage: 83.05% (required minimum: 80%).
 - Portable pre-classifier regression suite: 47/47 passed.
 - Routing accuracy gates retained: 96% fallback corpus, 95% semantic challenge

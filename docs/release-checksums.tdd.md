@@ -35,6 +35,13 @@ running it.
    Gitleaks v3.0.0 requirement. Checkpoint: `4bb3e01`.
 9. GREEN: the repository-hygiene target passed 6/6 with Gitleaks v3.0.0, whose
    action runtime is Node 24. Checkpoint: `5452bfc`.
+10. Downloading the first tagged prerelease exposed that GitHub artifact
+    transfer had stripped Unix executable permissions before ZIP creation.
+    RED: both release-archive tests failed because the permission-preserving
+    archiver and workflow integration were absent. Checkpoint: `82e57ce`.
+11. GREEN: the release-archive and repository-hygiene targets passed 8/8 after
+    restoring executable modes before creating each platform ZIP. Checkpoint:
+    `0d3b1d2`.
 
 ## Test specification
 
@@ -46,13 +53,15 @@ running it.
 | Repeated runs produce the same manifest | `test_manifest_is_complete_relative_and_stable` | Security integration | PASS |
 | All release runners use the same generator | `test_release_workflow_uses_portable_checksum_generator` | Workflow contract | PASS |
 | Workflows use current Node 24 official actions | `test_workflows_use_current_node24_action_releases` | Workflow contract | PASS |
+| Linux and macOS executables remain executable after ZIP extraction | `test_archives_restore_platform_executable_permissions` | Release integration | PASS |
+| Tagged releases use the permission-preserving archiver | `test_release_workflow_uses_permission_preserving_archiver` | Workflow contract | PASS |
 
 ## Coverage and merge evidence
 
-- Full suite: 66/66 passed.
+- Full suite: 68/68 passed.
 - Branch-aware application coverage: 83.05%; required minimum: 80%.
 - Ruff formatting/lint and mypy strict mode passed.
-- The eight RED/GREEN checkpoints are retained on `main`.
+- The ten RED/GREEN checkpoints are retained on `main`.
 - Native Windows, macOS, and Linux release workflow `35602419589` passed, and
   every downloaded checksum entry verified. The complete native evidence is
   recorded in `docs/verification-report.md`.
