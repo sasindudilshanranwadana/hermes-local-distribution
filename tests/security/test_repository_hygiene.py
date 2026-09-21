@@ -48,6 +48,7 @@ class RepositoryHygieneTests(unittest.TestCase):
             "actions/setup-python@v7.0.0": 2,
             "actions/upload-artifact@v7.0.1": 2,
             "actions/download-artifact@v8.0.1": 1,
+            "gitleaks/gitleaks-action@v3.0.0": 1,
         }
 
         for action, expected_count in expected_counts.items():
