@@ -1,6 +1,6 @@
 # Hermes Local Distribution
 
-A private-alpha, novice-friendly distribution of a hardened Hermes Agent system.
+A public-alpha, novice-friendly distribution of a hardened Hermes Agent system.
 It installs Hermes Desktop together with local routing, model classification,
 optional self-hosted memory, verification workflows, and conservative security
 defaults. Every installation starts with empty memory and credentials belonging
@@ -69,12 +69,13 @@ Build the graphical artifact:
 .venv/bin/pyinstaller --noconfirm --clean hermes-local-setup.spec
 ```
 
-The GitHub workflows build and test on Windows, macOS, and Linux. Public release
-is intentionally blocked pending the license decision, platform signing, and a
-clean-machine private beta.
+The GitHub workflows build and test on Windows, macOS, and Linux. Tagged public
+prereleases are available for testing. Platform signing, notarization, and the
+clean-machine acceptance run remain pending.
 
 ## Repository status
 
-This repository is a private alpha. Do not make it public until every item in
-[LICENSE-DECISION.md](LICENSE-DECISION.md) is resolved and the private-alpha
-runbook has passed on clean Windows and macOS machines.
+This repository is a public alpha. It does not yet have a repository-level
+distribution license; review [LICENSE-DECISION.md](LICENSE-DECISION.md) before
+redistributing or deriving from the source. The installers are unsigned and the
+private-alpha runbook has not yet passed on clean Windows and macOS machines.

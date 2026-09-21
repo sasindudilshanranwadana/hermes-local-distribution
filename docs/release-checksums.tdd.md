@@ -68,6 +68,7 @@ running it.
 - Branch-aware application coverage: 83.05%; required minimum: 80%.
 - Ruff formatting/lint and mypy strict mode passed.
 - The twelve RED/GREEN checkpoints are retained on `main`.
-- Native Windows, macOS, and Linux release workflow `35602419589` passed, and
-  every downloaded checksum entry verified. The complete native evidence is
-  recorded in `docs/verification-report.md`.
+- Native Windows, macOS, and Linux tagged-release workflow `35606318343`
+  passed. Every published `alpha.2` checksum entry verified, and extracted Unix
+  executable modes were confirmed. The complete native evidence is recorded in
+  `docs/verification-report.md`.

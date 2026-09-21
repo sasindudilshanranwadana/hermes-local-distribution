@@ -36,6 +36,13 @@ Verified locally on Linux x86_64 and with native GitHub runners on 2026-09-21:
   files, including nested app contents.
 - Release artifact sizes: Windows executable 11,946,556 bytes; macOS executable
   10,571,904 bytes; Linux executable 21,887,832 bytes.
+- Public prerelease `v0.1.0-alpha.2`, workflow `35606318343`: all platform
+  builds and the release job passed. The three published ZIPs were downloaded
+  from GitHub Releases; every checksum entry verified.
+- Extracted `alpha.2` ZIP permissions were verified: Linux and both macOS
+  executables are mode `755`; the Windows executable is mode `644` as expected.
+- Final `alpha.2` executable sizes: Windows 11,945,971 bytes; macOS 10,572,256
+  bytes; Linux 21,887,960 bytes.
 
 Pending external acceptance gates:
 
