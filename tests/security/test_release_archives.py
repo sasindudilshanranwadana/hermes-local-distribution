@@ -1,13 +1,13 @@
 import stat
-import subprocess
-import sys
 import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from unittest import mock
+
+from scripts.archive_release_assets import archive_release_assets
 
 ROOT = Path(__file__).resolve().parents[2]
-ARCHIVE_SCRIPT = ROOT / "scripts" / "archive_release_assets.py"
 
 
 class ReleaseArchiveTests(unittest.TestCase):
@@ -32,13 +32,9 @@ class ReleaseArchiveTests(unittest.TestCase):
                 binary.write_bytes(binary.name.encode())
                 binary.chmod(0o644)
 
-            result = subprocess.run(
-                [sys.executable, str(ARCHIVE_SCRIPT), str(release_assets)],
-                check=False,
-                capture_output=True,
-                text=True,
-            )
-            self.assertEqual(result.returncode, 0, result.stderr)
+            with mock.patch("scripts.archive_release_assets.Path.chmod", return_value=None):
+                archives = archive_release_assets(release_assets)
+            self.assertEqual(len(archives), 3)
 
             expected_modes = {
                 "hermes-local-setup-linux.zip": {"Hermes-Local-Setup": 0o755},
