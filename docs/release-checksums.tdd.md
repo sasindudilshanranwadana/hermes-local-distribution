@@ -41,5 +41,6 @@ running it.
 - Branch-aware application coverage: 83.05%; required minimum: 80%.
 - Ruff formatting/lint and mypy strict mode passed.
 - The four RED/GREEN checkpoints are retained on `main`.
-- Native Windows, macOS, and Linux workflow evidence is recorded in
-  `docs/verification-report.md` after the remote run completes.
+- Native Windows, macOS, and Linux release workflow `35601508666` passed, and
+  every downloaded checksum entry verified. The complete native evidence is
+  recorded in `docs/verification-report.md`.
