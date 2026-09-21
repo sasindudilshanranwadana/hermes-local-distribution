@@ -5,7 +5,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 CHECKSUM_SCRIPT = ROOT / "scripts" / "write_checksums.py"
 
@@ -40,10 +39,13 @@ class ReleaseChecksumTests(unittest.TestCase):
             self.assertEqual(
                 lines,
                 [
-                    f"{hashlib.sha256(executable.read_bytes()).hexdigest()}  Hermes-Local-Setup.exe",
                     (
                         f"{hashlib.sha256(nested.read_bytes()).hexdigest()}  "
                         "Hermes Local Setup.app/Contents/MacOS/Hermes-Local-Setup"
+                    ),
+                    (
+                        f"{hashlib.sha256(executable.read_bytes()).hexdigest()}  "
+                        "Hermes-Local-Setup.exe"
                     ),
                 ],
             )
