@@ -42,6 +42,12 @@ running it.
 11. GREEN: the release-archive and repository-hygiene targets passed 8/8 after
     restoring executable modes before creating each platform ZIP. Checkpoint:
     `0d3b1d2`.
+12. Native Windows CI showed that filesystem `chmod` behavior could not be used
+    to construct portable ZIP metadata (`438 != 493`). RED: a host-independent
+    test reproduced the failure locally by disabling `Path.chmod`. Checkpoint:
+    `f14f664`.
+13. GREEN: the archive target passed 2/2 after encoding Unix modes directly in
+    each ZIP entry, independent of the host filesystem. Checkpoint: `adea165`.
 
 ## Test specification
 
@@ -61,7 +67,7 @@ running it.
 - Full suite: 68/68 passed.
 - Branch-aware application coverage: 83.05%; required minimum: 80%.
 - Ruff formatting/lint and mypy strict mode passed.
-- The ten RED/GREEN checkpoints are retained on `main`.
+- The twelve RED/GREEN checkpoints are retained on `main`.
 - Native Windows, macOS, and Linux release workflow `35602419589` passed, and
   every downloaded checksum entry verified. The complete native evidence is
   recorded in `docs/verification-report.md`.
