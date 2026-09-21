@@ -24,13 +24,18 @@ def write_manifest(distribution: Path) -> Path:
         raise NotADirectoryError(f"release directory does not exist: {distribution}")
 
     manifest = distribution / MANIFEST_NAME
+    temporary_manifest = manifest.with_suffix(".tmp")
+    generated_files = {manifest, temporary_manifest}
     files = sorted(
-        (path for path in distribution.rglob("*") if path.is_file() and path != manifest),
+        (
+            path
+            for path in distribution.rglob("*")
+            if path.is_file() and path not in generated_files
+        ),
         key=lambda path: path.relative_to(distribution).as_posix(),
     )
     lines = [f"{sha256(path)}  {path.relative_to(distribution).as_posix()}" for path in files]
 
-    temporary_manifest = manifest.with_suffix(".tmp")
     temporary_manifest.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
     os.replace(temporary_manifest, manifest)
     return manifest
