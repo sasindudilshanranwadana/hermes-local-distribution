@@ -38,6 +38,22 @@ class RepositoryHygieneTests(unittest.TestCase):
         self.assertIn("pytest", dockerfile)
         self.assertIn("--target test", workflow)
 
+    def test_workflows_use_current_node24_action_releases(self) -> None:
+        workflows = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in sorted((ROOT / ".github" / "workflows").glob("*.yml"))
+        )
+        expected_counts = {
+            "actions/checkout@v7.0.1": 3,
+            "actions/setup-python@v7.0.0": 2,
+            "actions/upload-artifact@v7.0.1": 2,
+            "actions/download-artifact@v8.0.1": 1,
+        }
+
+        for action, expected_count in expected_counts.items():
+            with self.subTest(action=action):
+                self.assertEqual(workflows.count(action), expected_count)
+
     def test_tracked_source_has_no_personal_vps_markers(self) -> None:
         violations: list[str] = []
         for path in ROOT.rglob("*"):
