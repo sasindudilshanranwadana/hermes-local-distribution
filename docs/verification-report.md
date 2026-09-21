@@ -18,21 +18,24 @@ Verified locally on Linux x86_64 and with native GitHub runners on 2026-09-21:
 - PyInstaller Linux artifact: built successfully (13,195,184 bytes).
 - Frozen GUI smoke test: remained open under Xvfb for 5 seconds with no exception.
 - Gitleaks working-tree scan: no leaks found.
-- Gitleaks full-history scan through code commit `cfe1f28`: no leaks found.
+- Gitleaks full-history scan through workflow code commit `5452bfc`: no leaks
+  found.
 - AgentShield: grade A, no findings. It reported zero recognized agent-config
   files, so this is not treated as a general source-code security scan.
 - `git diff --check`: passed for the final working tree.
-- Native CI run `35601494774`: all Windows, macOS, and Linux jobs passed on
+- Native CI run `35602876394`: all Windows, macOS, and Linux jobs passed on
   Python 3.11 and 3.12; repository hygiene also passed.
-- Private-alpha installer run `35601508666`: Windows, macOS, and Linux builds,
+- Private-alpha installer run `35602419589`: Windows, macOS, and Linux builds,
   tests, checksum generation, and artifact uploads passed.
+- Workflows pin current Node 24 releases for checkout, Python setup, artifact
+  transfer, and Gitleaks; no Node runtime deprecation warning remains.
 - Downloaded release artifacts had the expected native formats: Windows x86-64
   PE, macOS arm64 Mach-O app, and Linux x86-64 ELF.
 - Every downloaded `SHA256SUMS.txt` entry verified. Manifests used relative
   paths, excluded generated manifest files, and covered all five macOS payload
   files, including nested app contents.
-- Release artifact sizes: Windows executable 11,944,267 bytes; macOS executable
-  10,571,568 bytes; Linux executable 21,888,064 bytes.
+- Release artifact sizes: Windows executable 11,946,556 bytes; macOS executable
+  10,571,904 bytes; Linux executable 21,887,832 bytes.
 
 Pending external acceptance gates:
 
