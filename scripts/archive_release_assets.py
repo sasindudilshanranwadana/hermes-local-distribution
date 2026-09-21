@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import shutil
 import stat
+import zipfile
 from pathlib import Path
 
 EXECUTABLES = {
@@ -16,6 +17,22 @@ EXECUTABLES = {
     ),
     "hermes-local-setup-windows": (),
 }
+
+
+def write_archive(directory: Path, executable_paths: tuple[Path, ...]) -> Path:
+    archive_path = directory.with_suffix(".zip")
+    executable_names = {path.as_posix() for path in executable_paths}
+    with zipfile.ZipFile(archive_path, "w") as archive:
+        for path in sorted(candidate for candidate in directory.rglob("*") if candidate.is_file()):
+            relative_name = path.relative_to(directory).as_posix()
+            mode = 0o755 if relative_name in executable_names else 0o644
+            info = zipfile.ZipInfo.from_file(path, arcname=relative_name)
+            info.create_system = 3
+            info.external_attr = (stat.S_IFREG | mode) << 16
+            info.compress_type = zipfile.ZIP_DEFLATED
+            with path.open("rb") as source, archive.open(info, "w", force_zip64=True) as target:
+                shutil.copyfileobj(source, target)
+    return archive_path
 
 
 def archive_release_assets(release_assets: Path) -> list[Path]:
@@ -32,10 +49,8 @@ def archive_release_assets(release_assets: Path) -> list[Path]:
             executable = directory / relative_path
             if not executable.is_file():
                 raise FileNotFoundError(f"missing platform executable: {executable}")
-            executable.chmod(executable.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
-        archive = Path(shutil.make_archive(str(directory), "zip", root_dir=directory))
-        archives.append(archive)
+        archives.append(write_archive(directory, executable_paths))
     return archives
 
 
