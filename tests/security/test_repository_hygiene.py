@@ -44,7 +44,7 @@ class RepositoryHygieneTests(unittest.TestCase):
             for path in sorted((ROOT / ".github" / "workflows").glob("*.yml"))
         )
         expected_counts = {
-            "actions/checkout@v7.0.1": 3,
+            "actions/checkout@v7.0.1": 4,
             "actions/setup-python@v7.0.0": 2,
             "actions/upload-artifact@v7.0.1": 2,
             "actions/download-artifact@v8.0.1": 1,
