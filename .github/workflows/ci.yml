@@ -18,8 +18,8 @@ jobs:
         python: ["3.11", "3.12"]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.0.0
         with:
           python-version: ${{ matrix.python }}
           cache: pip
@@ -39,7 +39,7 @@ jobs:
         if: runner.os == 'Linux'
         run: docker build --target test -f services/preclassifier/Dockerfile services/preclassifier
       - run: python -m PyInstaller --noconfirm --clean hermes-local-setup.spec
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7.0.1
         with:
           name: smoke-build-${{ matrix.os }}-py${{ matrix.python }}
           path: dist/**
@@ -48,7 +48,7 @@ jobs:
   repository-hygiene:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
       - uses: gitleaks/gitleaks-action@v2

@@ -22,8 +22,8 @@ jobs:
             artifact: linux
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.0.0
         with:
           python-version: "3.11"
           cache: pip
@@ -36,7 +36,7 @@ jobs:
       - run: python -m PyInstaller --noconfirm --clean hermes-local-setup.spec
       - name: Write checksums
         run: python scripts/write_checksums.py dist
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7.0.1
         with:
           name: hermes-local-setup-${{ matrix.artifact }}
           path: dist/**
@@ -47,7 +47,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8.0.1
         with:
           path: release-assets
       - name: Archive platform artifacts
