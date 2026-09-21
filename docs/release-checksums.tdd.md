@@ -24,6 +24,12 @@ running it.
 5. GREEN: `python -m pytest tests/security/test_release_checksums.py -q`
    passed 2/2 after excluding both generated manifest paths. Checkpoint:
    `19e2cee`.
+6. GitHub reported Node 20 deprecation annotations for the workflow action
+   versions. RED: the focused repository-hygiene test failed because none of
+   the current Node 24 action releases were present. Checkpoint: `bc4f220`.
+7. GREEN: `python -m pytest tests/security/test_repository_hygiene.py -q`
+   passed 6/6 after pinning the official Node 24 action releases. Checkpoint:
+   `92de874`.
 
 ## Test specification
 
@@ -34,13 +40,14 @@ running it.
 | Paths are portable and relative | `test_manifest_is_complete_relative_and_stable` | Security integration | PASS |
 | Repeated runs produce the same manifest | `test_manifest_is_complete_relative_and_stable` | Security integration | PASS |
 | All release runners use the same generator | `test_release_workflow_uses_portable_checksum_generator` | Workflow contract | PASS |
+| Workflows use current Node 24 official actions | `test_workflows_use_current_node24_action_releases` | Workflow contract | PASS |
 
 ## Coverage and merge evidence
 
-- Full suite: 65/65 passed.
+- Full suite: 66/66 passed.
 - Branch-aware application coverage: 83.05%; required minimum: 80%.
 - Ruff formatting/lint and mypy strict mode passed.
-- The four RED/GREEN checkpoints are retained on `main`.
+- The six RED/GREEN checkpoints are retained on `main`.
 - Native Windows, macOS, and Linux release workflow `35601508666` passed, and
   every downloaded checksum entry verified. The complete native evidence is
   recorded in `docs/verification-report.md`.
